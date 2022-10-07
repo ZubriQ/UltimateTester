@@ -1,0 +1,14 @@
+﻿namespace Test
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            int var1 = 1;
+            int var2 = 6;
+            var2 = var2 + var1;
+            Console.WriteLine("Hello, World!");
+            Console.WriteLine("var2 = " + var2);
+        }
+    }
+}
