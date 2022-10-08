@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Antlr4" Version="4.6.6">
       <PrivateAssets>all</PrivateAssets>
@@ -17,6 +16,29 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Antlr4 Update="ANTLR4\CSharpLexer.g4">
+      <Generator>MSBuild:Compile</Generator>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Antlr4>
+    <Antlr4 Update="ANTLR4\CSharpPreprocessorParser.g4">
+      <DefaultCustomToolNamespace>$([MSBuild]::ValueOrDefault('$(RootNamespace).%(DefaultCustomToolNamespace)', '').TrimEnd('.'))</DefaultCustomToolNamespace>
+      <CustomToolNamespace>CodeParser.ANTLR4</CustomToolNamespace>
+    </Antlr4>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ANTLR4\CSharpTest1.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ANTLR4\CSharpTest2.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ANTLR4\CSharpTest3.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
