@@ -36,13 +36,12 @@
     <None Update="ANTLR4\CSharpTest2.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="ANTLR4\CSharpTest4.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="ANTLR4\CSharpTest3.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Token-based\" />
   </ItemGroup>
 
 </Project>
