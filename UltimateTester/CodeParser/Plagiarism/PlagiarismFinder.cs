@@ -1,10 +1,5 @@
 ﻿using NGrammer.NGramSets;
 using NGrammer;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CodeParser.Plagiarism
 {
@@ -17,6 +12,7 @@ namespace CodeParser.Plagiarism
             CodeFinder = new NGrammer<string, StringSet>();
         }
 
+        // TODO: Add AddCodeRange method?
         public void AddCode(string identifier, string code)
         {
             CodeFinder.AddTrainingSet(identifier, code);
