@@ -4,7 +4,6 @@ using CodeParser.ANTLR4;
 using CodeParser.ZhangShasha;
 using System.Diagnostics;
 
-// Test.
 Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
 
 Tree tree1 = SetUpTestTree("ANTLR4\\CSharpTest2.txt");
@@ -33,16 +32,16 @@ void OutputResult(int distance)
 }
 
 // Для Токенов
-//var inputStream = new AntlrInputStream(fileContent);
+//var cSharpCode = File.ReadAllText("TestCode\\CSharpTest6.txt");
+//var inputStream = new AntlrInputStream(cSharpCode);
 //var cSharpLexer = new CSharpLexer(inputStream);
 //var commonTokenStream = new CommonTokenStream(cSharpLexer);
 //var cSharpParser = new CSharpParser(commonTokenStream);
 //var tokens = cSharpLexer.GetAllTokens();
-//var programContext = CSharpParser.;
-//var visitor = new CSharpVisitor();
-//visitor.Visit(cSharpParser);
-//foreach (var token in tokens) {
-//    Console.Write($"{token.Type} {token.Text}");
+
+//foreach (var token in tokens)
+//{
+//    Console.Write($"{token.Text}");
 //}
 
 Console.ReadLine();
