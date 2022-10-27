@@ -17,6 +17,7 @@
     </PackageReference>
     <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
     <PackageReference Include="NGrammer" Version="1.1.0" />
+    <PackageReference Include="String.Similarity" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
