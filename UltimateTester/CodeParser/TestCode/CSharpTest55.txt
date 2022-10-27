@@ -1,0 +1,402 @@
+﻿using Lab6_Integration.Diagram;
+using Lab6_Integration.Integration;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace Lab6_Integration
+{
+    public partial class CreateChartWindow : Window
+    {
+        public int ChartWidth
+        {
+            get 
+            {
+                int value;
+                Int32.TryParse(txtWidth.Text, out value);
+                return value;
+            }
+        }
+        public int ChartHeight
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtHeight.Text, out value);
+                return value;
+            }
+        }
+
+        public double XRatio
+        {
+            get
+            {
+                double value;
+                Double.TryParse(txtXRatio.Text, out value);
+                return value;
+            }
+        }
+        public double YRatio
+        {
+            get
+            {
+                double value;
+                Double.TryParse(txtYRatio.Text, out value);
+                return value;
+
+            }
+        }
+
+        public int Diameter
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtDiameter.Text, out value);
+                return value;
+            }
+        }
+        public Brush GraphColour
+        {
+            get
+            {
+                return cbGraphColour.SelectedItem as Brush;
+            }
+        }
+
+        public int N
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtN.Text, out value);
+                return value;
+            }
+        }
+
+       public CreateChartWindow()
+        {
+            InitializeComponent();
+            LoadDefaultParameters();
+            LoadColours();
+            LoadIntegrationMethods();
+            LoadFunctions();
+        }
+
+        public Equation Function
+        {
+            get
+            {
+                return cbGraphColour.SelectedItem as Equation;
+            }
+        }
+
+        public double A
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtA.Text, out value);
+                return value;
+            }
+        }
+        public double B
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtB.Text, out value);
+                return value;
+            }
+        }
+        public double C
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtC.Text, out value);
+                return value;
+            }
+        }
+
+        public double X0
+        {
+            get
+            {
+                double value;
+                Double.TryParse(txtX0.Text, out value);
+                return value;
+            }
+        }
+        public double X1
+        {
+            get
+            {
+                double value;
+                Double.TryParse(txtX1.Text, out value);
+                return value;
+            }
+        }
+
+        BinaryWriter _binaryWriter = new BinaryWriter(
+            new FileStream("IntegrationBinaryLog.txt", FileMode.Create));
+        StreamWriter _streamWriter = new StreamWriter(
+            new FileStream("IntegrationLog.txt", FileMode.Create));
+
+        Stopwatch _stopwatch = new Stopwatch();
+
+        private void btnCreate_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: check entered values.
+            // Refresh.
+            _stopwatch.Restart();
+            ((MainWindow)Application.Current.MainWindow).drawingCanvas.Children.Clear();
+            // Set.
+            SetChart();
+            //Equation eq = null;
+            //SetEquiation(ref eq);
+            //SetIntegrator(eq);
+            SetIntegrator(); // Now we use a delegate instead of Equation class.
+            SetEquiation();
+            // Draw.
+            ((MainWindow)Application.Current.MainWindow).DrawAxes();
+            //((MainWindow)Application.Current.MainWindow).DrawFunction(X0, X1, eq);
+            ((MainWindow)Application.Current.MainWindow).DrawFunction(X0, X1);
+        }
+
+        private void SetChart()
+        {
+            Axis axes = new Axis(5, 5, new SolidColorBrush(Color.FromRgb(90, 90, 90)));
+            Coordinate center = new Coordinate(ChartWidth / 2, ChartHeight / 2);
+            Coordinate ratio = new Coordinate(XRatio, YRatio);
+            Graph graph = new Graph(Diameter, GraphColour);
+            ((MainWindow)Application.Current.MainWindow).Chart = null;
+            ((MainWindow)Application.Current.MainWindow).Chart = new Chart(center, ratio, axes, graph);
+            ((MainWindow)Application.Current.MainWindow).drawingCanvas.Width = ChartWidth;
+            ((MainWindow)Application.Current.MainWindow).drawingCanvas.Height = ChartHeight;
+            ((MainWindow)Application.Current.MainWindow).ImageHeight = ChartHeight;
+            ((MainWindow)Application.Current.MainWindow).N = N;
+        }
+
+        private void SetEquiation()
+        {
+            SetFunctionProvider(A, B, C);
+            Integrator integr = ((MainWindow)Application.Current.MainWindow).Integrator;
+            //integr.OnStart += DisableButtons;
+            integr.OnFinish += UpdateVolume;
+            integr.OnFinish += UpdateHeader;
+            integr.OnFinish += ShowProcessingTime;
+            integr.OnStep += WriteToBinaryFile;
+            integr.OnStep += WriteToTextFile;
+            //integr.OnFinish += EnableButtons;
+
+            if (cbFunction.SelectedItem is QuadricEquation)
+            {
+                integr.IntegratingHandler +=
+                    new Integrator.Integration(FunctionProvider.QuadricEquation);
+            }
+            else if (cbFunction.SelectedItem is CosEquation)
+            {
+                integr.IntegratingHandler +=
+                    new Integrator.Integration(FunctionProvider.CosEquation);
+            }
+            else if (cbFunction.SelectedItem is AbsSinEquation)
+            {
+                integr.IntegratingHandler +=
+                    new Integrator.Integration(FunctionProvider.AbsSinEquation);
+            }
+        }
+
+        private void UpdateVolume(object sender, IntegratorEventArgs args)
+        {
+            ((MainWindow)Application.Current.MainWindow).lblVolume.Content = 
+                Math.Round(args.Integr, 4);
+        }
+        private void UpdateHeader(object sender, IntegratorEventArgs args)
+        {
+            ((MainWindow)Application.Current.MainWindow).lblIntegrationMethod.Content =
+                ((MainWindow)Application.Current.MainWindow).Integrator.ToString();
+        }
+
+        private void WriteToBinaryFile(object sender, IntegratorEventArgs args)
+        {
+            _binaryWriter.Write(args.X);
+            _binaryWriter.Write(args.F);
+            _binaryWriter.Write(args.Integr);
+        }
+
+        private void WriteToTextFile(object sender, IntegratorEventArgs args)
+        {
+            _streamWriter.Write("X=");
+            _streamWriter.Write(args.X);
+            _streamWriter.Write(", Y=");
+            _streamWriter.Write(args.F);
+            _streamWriter.Write(", Sum=");
+            _streamWriter.Write(args.Integr);
+            _streamWriter.Write(";\n");
+        }
+
+        private void ShowProcessingTime(object sender, IntegratorEventArgs args)
+        {
+            MessageBox.Show($"Elapsed time: {_stopwatch.Elapsed}");
+        }
+
+        //private void DisableButtons(object sender, IntegratorEventArgs args)
+        //{
+        //    btnCancel.IsEnabled = false;
+        //    btnCreate.IsEnabled = false;
+        //}
+
+        //private void EnableButtons(object sender, IntegratorEventArgs args)
+        //{
+        //    btnCancel.IsEnabled = true;
+        //    btnCreate.IsEnabled = true;
+        //}
+
+        private void SetFunctionProvider(double a, double b, double c)
+        {
+            FunctionProvider.A = a;
+            FunctionProvider.B = b;
+            FunctionProvider.C = c;
+        }
+
+        private void SetIntegrator()
+        {
+            if (cbIntegrationMethod.SelectedItem is RectangularIntegrator)
+                ((MainWindow)Application.Current.MainWindow).Integrator = new RectangularIntegrator();
+            else if (cbIntegrationMethod.SelectedItem is TrapezoidalIntegrator)
+                ((MainWindow)Application.Current.MainWindow).Integrator = new TrapezoidalIntegrator();
+            else if (cbIntegrationMethod.SelectedItem is SimpsonIntegrator)
+                ((MainWindow)Application.Current.MainWindow).Integrator = new SimpsonIntegrator();
+            else if (cbIntegrationMethod.SelectedItem is MonteCarloIntegrator)
+                ((MainWindow)Application.Current.MainWindow).Integrator = new MonteCarloIntegrator();
+        }
+
+        //private void SetEquiation(ref Equation eq)
+        //{
+        //    if (cbFunction.SelectedItem is MyEquation)
+        //    {
+        //        eq = new MyEquation(A, B, C);
+        //    }
+        //    else if (cbFunction.SelectedItem is MyEquation2)
+        //    {
+        //        eq = new MyEquation2(A, B);
+        //    }
+        //    else if (cbFunction.SelectedItem is MyEquation3)
+        //    {
+        //        eq = new MyEquation3(A);
+        //    }
+        //}
+
+        //private void SetIntegrator(Equation eq)
+        //{
+        //    if (cbIntegrationMethod.SelectedItem is RectangularIntegrator)
+        //        ((MainWindow)Application.Current.MainWindow).Integrator = new RectangularIntegrator(eq);
+        //    else if (cbIntegrationMethod.SelectedItem is TrapezoidalIntegrator)
+        //        ((MainWindow)Application.Current.MainWindow).Integrator = new TrapezoidalIntegrator(eq);
+        //    else if (cbIntegrationMethod.SelectedItem is SimpsonIntegrator)
+        //        ((MainWindow)Application.Current.MainWindow).Integrator = new SimpsonIntegrator(eq);
+        //    else if (cbIntegrationMethod.SelectedItem is MonteCarloIntegrator)
+        //        ((MainWindow)Application.Current.MainWindow).Integrator = new MonteCarloIntegrator(eq);
+        //}
+
+        private void btnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        #region Set initial parameters
+        private void LoadDefaultParameters()
+        {
+            txtWidth.Text = "600";
+            txtHeight.Text = "600";
+            txtXRatio.Text = "7";
+            txtYRatio.Text = "1.5";
+            txtDiameter.Text = "1";
+            txtN.Text = "1000";
+            txtA.Text = "5";
+            txtB.Text = "-30";
+            txtC.Text = "-30";
+            txtX0.Text = "-40";
+            txtX1.Text = "40";
+        }
+
+        private void LoadIntegrationMethods()
+        {
+            List<Integrator> integrators = new List<Integrator>();
+            integrators.Add(new RectangularIntegrator());
+            integrators.Add(new TrapezoidalIntegrator());
+            integrators.Add(new SimpsonIntegrator());
+            integrators.Add(new MonteCarloIntegrator());
+            cbIntegrationMethod.ItemsSource = integrators;
+            cbIntegrationMethod.SelectedIndex = 1;
+        }
+
+        private void LoadFunctions()
+        {
+            List<Equation> equations = new List<Equation>();
+            equations.Add(new QuadricEquation());
+            equations.Add(new CosEquation());
+            equations.Add(new AbsSinEquation());
+            cbFunction.ItemsSource = equations;
+            cbFunction.SelectedIndex = 2;
+        }
+
+        private void LoadColours()
+        {
+            List<Brush> colors = new List<Brush>();
+            colors.Add(new SolidColorBrush(Colors.Goldenrod));
+            colors.Add(new SolidColorBrush(Colors.Magenta));
+            colors.Add(new SolidColorBrush(Colors.LightGreen));
+            colors.Add(new SolidColorBrush(Colors.SteelBlue));
+            colors.Add(new SolidColorBrush(Colors.Crimson));
+            cbGraphColour.ItemsSource = colors;
+            cbGraphColour.SelectedIndex = 0;
+        }
+        #endregion
+
+        #region Function parameters
+        private void cbFunction_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbFunction.SelectedItem is QuadricEquation)
+                Equation1TB();
+            else if (cbFunction.SelectedItem is CosEquation)
+                Equation2TB();
+            else if (cbFunction.SelectedItem is AbsSinEquation)
+                Equation3TB();
+        }
+
+        private void Equation1TB()
+        {
+            txtB.IsEnabled = true;
+            txtC.IsEnabled = true;
+        }
+
+        private void Equation2TB()
+        {
+            txtB.IsEnabled = true;
+            txtC.IsEnabled = false;
+        }
+
+        private void Equation3TB()
+        {
+            txtB.IsEnabled = false;
+            txtC.IsEnabled = false;
+        }
+        #endregion
+    }
+}

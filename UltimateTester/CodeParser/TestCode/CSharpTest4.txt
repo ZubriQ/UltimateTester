@@ -11,13 +11,6 @@
             Console.WriteLine($"[1-Dimensional Array]:\tThe process took {duration} milliseconds.");
 
             sw.Restart();
-            for (int i = 0; i < twoDimArr.GetLength(0); i++)
-                for (int j = 0; j < twoDimArr.GetLength(1); j++)
-                    twoDimArr[i, j].Count++;
-            duration = sw.ElapsedMilliseconds;
-            Console.WriteLine($"[2-Dimensional Array]:\tThe process took {duration} milliseconds.");
-
-            sw.Restart();
             for (int i = 0; i < jaggedArr.Length; i++)
                 for (int j = 0; j < jaggedArr[i].Length; j++)
                     jaggedArr[i][j].Count++;

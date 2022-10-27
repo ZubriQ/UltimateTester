@@ -1,0 +1,4 @@
+﻿int nrow = 4;
+int column = 8;
+int columnf = 8;
+bool ok = true;
