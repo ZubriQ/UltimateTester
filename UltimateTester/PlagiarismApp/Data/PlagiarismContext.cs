@@ -10,16 +10,17 @@ namespace PlagiarismApp.Data
 {
     public partial class PlagiarismContext : DbContext
     {
-        //TODO: use configuration ?
-        public IConfiguration Configuration { get; }
+        WebApplicationBuilder Builder { get; }
 
         public PlagiarismContext()
         {
+            Builder = WebApplication.CreateBuilder();
         }
 
         public PlagiarismContext(DbContextOptions<PlagiarismContext> options)
             : base(options)
         {
+            Builder = WebApplication.CreateBuilder();
         }
 
         public virtual DbSet<AspNetRole> AspNetRoles { get; set; } = null!;
@@ -37,8 +38,8 @@ namespace PlagiarismApp.Data
         {
             if (!optionsBuilder.IsConfigured)
             {
-                //string connection = Configuration.GetConnectionString("Connection");
-                optionsBuilder.UseSqlServer("Server=AUGUSTA\\SQLEXPRESS;Database=Plagiarism;Trusted_Connection=True;");
+                string connectionString = Builder.Configuration.GetConnectionString("Connection");
+                optionsBuilder.UseSqlServer(connectionString);
             }
         }
 

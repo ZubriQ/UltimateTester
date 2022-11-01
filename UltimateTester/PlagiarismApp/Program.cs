@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PlagiarismApp;
+using PlagiarismApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
