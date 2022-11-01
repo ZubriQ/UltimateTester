@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 
-namespace BlazorApp1TestingAuth.Areas.Identity.Pages.Account
+namespace PlagiarismApp.Areas.Identity.Pages.Account
 {
     public class RegisterModel : PageModel
     {
