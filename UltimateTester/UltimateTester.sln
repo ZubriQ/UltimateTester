@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UltimateTester", "UltimateT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeParser", "CodeParser\CodeParser.csproj", "{E157F085-CB90-4E24-986D-92411A535B3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlagiarismApp", "PlagiarismApp\PlagiarismApp.csproj", "{466492A3-22EE-473D-813D-9B9B7D8FC306}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlagiarismApp", "PlagiarismApp\PlagiarismApp.csproj", "{466492A3-22EE-473D-813D-9B9B7D8FC306}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

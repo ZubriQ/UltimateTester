@@ -9,6 +9,18 @@
 
     <main>
         <div class="top-row px-4">
+            <CascadingAuthenticationState>
+                <AuthorizeView>
+                    <Authorized>
+                        <a href="/identity/account/logout" target="_blank">Log out</a>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/identity/account/login" target="_blank">Sign in</a>
+                        <a href="/identity/account/register" target="_blank">Sign up</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </CascadingAuthenticationState>
+            
             <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
         </div>
 
