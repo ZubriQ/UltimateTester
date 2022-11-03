@@ -6,7 +6,7 @@ using PlagiarismApp.Data.AspNetTables;
 using Microsoft.Extensions.Configuration;
 using System.Configuration;
 
-namespace PlagiarismApp.Data
+namespace PlagiarismApp.Data.Database
 {
     public partial class PlagiarismContext : DbContext
     {

@@ -1,17 +1,21 @@
-using BlazorApp1TestingAuth.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PlagiarismApp;
 using PlagiarismApp.Data;
+using PlagiarismApp.Data.AspNetTables;
+using PlagiarismApp.Data.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-//builder.Services.AddSingleton<DatabaseService>();
+builder.Services.AddSingleton<ProjectService>();
+builder.Services.AddSingleton<StudentService>();
+builder.Services.AddSingleton<LabWorkService>();
+builder.Services.AddSingleton<GroupService>();
 
 var connectionString = builder.Configuration.GetConnectionString("Connection");
 builder.Services.AddDbContext<IdentityDataContext>(options => options.UseSqlServer(connectionString));

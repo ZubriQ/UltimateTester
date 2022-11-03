@@ -14,27 +14,50 @@
                 <span class="oi oi-home" aria-hidden="true"></span> Home
             </NavLink>
         </div>
-        <CascadingAuthenticationState>
-            <AuthorizeView>
-                <Authorized>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="dashboard" Match="NavLinkMatch.All">
-                            <span class="oi oi-graph" aria-hidden="true"></span> Dashboard
-                        </NavLink>
-                    </div>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="projects">
-                            <span class="oi oi-list" aria-hidden="true"></span> Projects
-                        </NavLink>
-                    </div>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="check_code">
-                            <span class="oi oi-circle-check" aria-hidden="true"></span> Check code
-                        </NavLink>
-                    </div>
-                </Authorized>
-            </AuthorizeView>
-        </CascadingAuthenticationState>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="check_code">
+                <span class="oi oi-circle-check" aria-hidden="true"></span> Check Code
+            </NavLink>
+        </div>
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="upload_project">
+                        <span class="oi oi-data-transfer-upload" aria-hidden="true"></span> Upload Project
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="upload_from_git">
+                        <span class="oi oi-data-transfer-upload" aria-hidden="true"></span> Upload From Git
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="dashboard">
+                        <span class="oi oi-graph" aria-hidden="true"></span> Dashboard
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="projects">
+                        <span class="oi oi-list" aria-hidden="true"></span> Projects
+                    </NavLink>
+                </div>                
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="students">
+                        <span class="oi oi-list" aria-hidden="true"></span> Students
+                    </NavLink>
+                </div>                
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="groups">
+                        <span class="oi oi-list" aria-hidden="true"></span> Groups
+                    </NavLink>
+                </div>                
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="lab_works">
+                        <span class="oi oi-list" aria-hidden="true"></span> Lab Works
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
     </nav>
 </div>
 

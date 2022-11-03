@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PlagiarismApp.Data
+namespace PlagiarismApp.Data.Database
 {
     public partial class LabWork
     {
