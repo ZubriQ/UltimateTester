@@ -1,7 +1,32 @@
 ﻿@page "/lab_works"
+@using Data.Database
+@inject LabWorkService LabWorkService
 
-<h3>LabWorks</h3>
+<h3>Lab works:</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var labWork in labWorks)
+        {
+            <tr>
+                <td>@labWork.Name</td>
+                <td>@labWork.Description</td>
+            </tr>
+        }
+    </tbody>
+</table>
 
 @code {
+    private LabWork[]? labWorks { get; set; }
 
+    protected override async Task OnInitializedAsync()
+    {
+        labWorks = await LabWorkService.GetItemsAsync();
+    }
 }

@@ -1,10 +1,15 @@
-﻿namespace PlagiarismApp.Data.Database
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace PlagiarismApp.Data.Database
 {
     public class ProjectService : Service<Project>
     {
         public override Task<Project[]> GetItemsAsync()
         {
-            return Task.FromResult(database.Projects.ToArray());
+            Project[] projects = database.Projects.Include(p => p.LabWork)
+                                                  .Include(p => p.Student)
+                                                  .ToArray();
+            return Task.FromResult(projects);
         }
     }
 }

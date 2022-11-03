@@ -1,7 +1,44 @@
 ﻿@page "/students"
+@using Data.Database
+@inject StudentService StudentService
 
-<h3>Students</h3>
+<h3>Students:</h3>
+
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>First name</th>
+            <th>Surname</th>
+            <th>Patronymic</th>
+            <th>Group</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var student in students)
+        {
+            <tr>
+                <td>@student.FirstName</td>
+                <td>@student.Surname</td>
+                @if (!string.IsNullOrEmpty(@student.Patronymic))
+                {
+                    <td>@student.Patronymic</td>
+                }
+                else
+                {
+                    <td style="color:darkgray">No</td>
+                }
+                <td>@student.Group.Name</td>
+            </tr>
+        }
+    </tbody>
+</table>
 
 @code {
+    private Student[]? students { get; set; }
 
+    protected override async Task OnInitializedAsync()
+    {
+        students = await StudentService.GetItemsAsync();
+    }
 }

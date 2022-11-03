@@ -1,7 +1,30 @@
 ﻿@page "/groups"
+@using Data.Database
+@inject GroupService GroupService
 
-<h3>Groups</h3>
+<h3>Groups:</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var group in groups)
+        {
+            <tr>
+                <td>@group.Name</td>
+            </tr>
+        }
+    </tbody>
+</table>
 
 @code {
+    private Group[]? groups { get; set; }
 
+    protected override async Task OnInitializedAsync()
+    {
+        groups = await GroupService.GetItemsAsync();
+    }
 }
