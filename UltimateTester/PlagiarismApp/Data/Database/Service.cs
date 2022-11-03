@@ -10,5 +10,17 @@
         }
 
         public abstract Task<T[]> GetItemsAsync();
+
+        public abstract void Add(T item);
+
+        public void SaveChangesAsync()
+        {
+            database.SaveChangesAsync();
+        }
+        
+        public void SaveChanges()
+        {
+            database.SaveChanges();
+        }
     }
 }

@@ -1,0 +1,36 @@
+﻿@page "/groups/add_group"
+@using Data.Database
+@using Microsoft.Extensions.Logging
+@using PlagiarismApp.Models
+@inject GroupService GroupService
+@inject NavigationManager NavigationManager
+@inject ILogger<AddGroup> Logger
+
+<h3>Adding a new group:</h3>
+
+<EditForm Model="@groupModel" OnValidSubmit="@CreateAndSaveGroup">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-floating" style="margin:10px">
+        <InputText id="name" @bind-Value="groupModel.Name" />
+    </div>
+    <div class="form-floating" style="margin:10px">
+        <button type="submit" class="btn btn-primary">Insert</button>
+    </div>
+    
+</EditForm>
+
+@code {
+    private GroupModel groupModel = new();
+
+    private void CreateAndSaveGroup()
+    {
+        Logger.LogInformation("HandleValidSubmit called");
+
+        Group newGroup = new Group() { Name = groupModel.Name };
+        GroupService.Add(newGroup);
+        GroupService.SaveChanges();
+        NavigationManager.NavigateTo("/groups");
+    }
+}

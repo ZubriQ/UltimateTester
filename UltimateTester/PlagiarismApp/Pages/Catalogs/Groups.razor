@@ -1,6 +1,7 @@
 ﻿@page "/groups"
 @using Data.Database
 @inject GroupService GroupService
+@inject NavigationManager NavManager
 
 <h3>Groups:</h3>
 
@@ -20,11 +21,20 @@
     </tbody>
 </table>
 
+<button class="btn btn-primary" @onclick="NavigateToAddGroupPage">
+    Add
+</button>
+
 @code {
     private Group[]? groups { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         groups = await GroupService.GetItemsAsync();
+    }
+
+    private void NavigateToAddGroupPage()
+    {
+        NavManager.NavigateTo("groups/add_group");
     }
 }
