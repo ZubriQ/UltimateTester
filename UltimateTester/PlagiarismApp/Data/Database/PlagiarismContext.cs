@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
+﻿using Microsoft.EntityFrameworkCore;
 using PlagiarismApp.Data.AspNetTables;
-using Microsoft.Extensions.Configuration;
-using System.Configuration;
 
 namespace PlagiarismApp.Data.Database
 {
@@ -129,9 +124,7 @@ namespace PlagiarismApp.Data.Database
             {
                 entity.ToTable("lab_work");
 
-                entity.Property(e => e.Id)
-                    .ValueGeneratedNever()
-                    .HasColumnName("id");
+                entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.Description)
                     .HasColumnType("text")
@@ -181,9 +174,7 @@ namespace PlagiarismApp.Data.Database
             {
                 entity.ToTable("student");
 
-                entity.Property(e => e.Id)
-                    .ValueGeneratedNever()
-                    .HasColumnName("id");
+                entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.FirstName)
                     .HasMaxLength(50)
