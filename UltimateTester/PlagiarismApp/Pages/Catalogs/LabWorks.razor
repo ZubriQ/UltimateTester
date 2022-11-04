@@ -1,6 +1,7 @@
 ﻿@page "/lab_works"
 @using Data.Database
 @inject LabWorkService LabWorkService
+@inject NavigationManager NavManager
 @attribute [Authorize]
 
 <h3>Lab works:</h3>
@@ -10,6 +11,7 @@
         <tr>
             <th>Name</th>
             <th>Description</th>
+            <th>Edit</th>
         </tr>
     </thead>
     <tbody>
@@ -18,16 +20,33 @@
             <tr>
                 <td>@labWork.Name</td>
                 <td>@labWork.Description</td>
+                <td>
+                    <a href="@GetHrefForEditPage(labWork)">Edit</a>
+                </td> <!-- TODO: Add a delete option-->
             </tr>
         }
     </tbody>
 </table>
 
+<button class="btn btn-primary" @onclick="NavigateToAddLabWorkPage">
+    Add
+</button>
+
 @code {
     private LabWork[]? labWorks { get; set; }
+
+    private string GetHrefForEditPage(LabWork labWork)
+    {
+        return "lab_works/" + labWork.Id;
+    }
 
     protected override async Task OnInitializedAsync()
     {
         labWorks = await LabWorkService.GetItemsAsync();
+    }
+
+    private void NavigateToAddLabWorkPage()
+    {
+        NavManager.NavigateTo("lab_works/add_lab_work");
     }
 }

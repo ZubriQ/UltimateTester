@@ -1,0 +1,57 @@
+﻿@page "/lab_works/add_lab_work"
+@using Data.Database
+@using Microsoft.Extensions.Logging
+@using PlagiarismApp.Models
+@inject LabWorkService LabWorkService
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<h3>Adding a new lab work:</h3>
+
+<EditForm Model="@labWorkModel" OnValidSubmit="@CreateAndSaveLabWork">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Name:</label>
+    </div>
+    <div class="form-floating" style="margin:10px">
+        <InputText id="name" @bind-Value="labWorkModel.Name" />
+    </div>
+    <div>
+        <label>Description:</label>
+    </div>
+    <div class="form-floating" style="margin:10px">
+        <InputText id="description" @bind-Value="labWorkModel.Description" />
+    </div>
+    <div class="form-floating" style="margin:10px">
+        <button type="submit" class="btn btn-primary">Insert</button>
+        <button type="reset" class="btn btn-primary" @onclick="Cancel">Cancel</button>
+    </div>
+
+</EditForm>
+
+@code {
+    private LabWorkModel labWorkModel = new();
+
+    private void CreateAndSaveLabWork()
+    {
+        LabWorkService.Add(CreateLabWork());
+        LabWorkService.SaveChanges();
+        NavigationManager.NavigateTo("/lab_works");
+    }
+
+    private LabWork CreateLabWork()
+    {
+        return new LabWork()
+            {
+                Name = labWorkModel.Name,
+                Description = labWorkModel.Description
+            };
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/lab_works");
+    }
+}
