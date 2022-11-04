@@ -2,9 +2,9 @@
 {
     public class LabWorkService : Service<LabWork>
     {
-        public override void Add(LabWork item)
+        public override Task<LabWork> GetItemAsync(int id)
         {
-            database.LabWorks.Add(item);
+            return Task.FromResult(database.LabWorks.First(l => l.Id == id));
         }
 
         public override Task<LabWork[]> GetItemsAsync()

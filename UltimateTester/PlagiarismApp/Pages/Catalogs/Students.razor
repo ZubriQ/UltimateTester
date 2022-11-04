@@ -1,9 +1,9 @@
 ﻿@page "/students"
 @using Data.Database
 @inject StudentService StudentService
+@attribute [Authorize]
 
 <h3>Students:</h3>
-
 
 <table class="table">
     <thead>

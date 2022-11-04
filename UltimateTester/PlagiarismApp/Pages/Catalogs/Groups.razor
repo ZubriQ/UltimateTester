@@ -2,6 +2,7 @@
 @using Data.Database
 @inject GroupService GroupService
 @inject NavigationManager NavManager
+@attribute [Authorize]
 
 <h3>Groups:</h3>
 
@@ -9,6 +10,7 @@
     <thead>
         <tr>
             <th>Name</th>
+            <th>Edit</th>
         </tr>
     </thead>
     <tbody>
@@ -16,6 +18,9 @@
         {
             <tr>
                 <td>@group.Name</td>
+                <td>
+                    <a href="@GetHrefForEditPage(group)">Edit</a>
+                </td>
             </tr>
         }
     </tbody>
@@ -27,6 +32,11 @@
 
 @code {
     private Group[]? groups { get; set; }
+
+    private string GetHrefForEditPage(Group group)
+    {
+        return "groups/" + group.Id;
+    }
 
     protected override async Task OnInitializedAsync()
     {

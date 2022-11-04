@@ -4,9 +4,9 @@ namespace PlagiarismApp.Data.Database
 {
     public class StudentService : Service<Student>
     {
-        public override void Add(Student item)
+        public override Task<Student> GetItemAsync(int id)
         {
-            database.Students.Add(item);
+            return Task.FromResult(database.Students.First(s => s.Id == id));
         }
 
         public override Task<Student[]> GetItemsAsync()

@@ -11,7 +11,31 @@
 
         public abstract Task<T[]> GetItemsAsync();
 
-        public abstract void Add(T item);
+        public abstract Task<T> GetItemAsync(int id);
+
+        public void Add(T item)
+        {
+            if (item != null)
+            {
+                database.Add(item);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public void Attach(T item)
+        {
+            if (item != null)
+            {
+                database.Attach(item);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
 
         public void SaveChangesAsync()
         {

@@ -5,6 +5,7 @@
 @inject GroupService GroupService
 @inject NavigationManager NavigationManager
 @inject ILogger<AddGroup> Logger
+@attribute [Authorize]
 
 <h3>Adding a new group:</h3>
 
@@ -26,7 +27,7 @@
 
     private void CreateAndSaveGroup()
     {
-        Logger.LogInformation("HandleValidSubmit called");
+        Logger.LogInformation("CreateAndSaveGroup called");
 
         Group newGroup = new Group() { Name = groupModel.Name };
         GroupService.Add(newGroup);

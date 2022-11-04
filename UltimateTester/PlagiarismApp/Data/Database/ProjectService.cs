@@ -4,9 +4,15 @@ namespace PlagiarismApp.Data.Database
 {
     public class ProjectService : Service<Project>
     {
-        public override void Add(Project item)
+        public override Task<Project> GetItemAsync(int studentId)
         {
-            database.Projects.Add(item);
+            return Task.FromResult(database.Projects.First(p => p.StudentId == studentId));
+        }
+
+        public Task<Project> GetItemAsync(int studentId, int labId)
+        {
+            return Task.FromResult(database.Projects.First(p => p.StudentId == studentId &&
+                                                                p.LabWorkId == labId));
         }
 
         public override Task<Project[]> GetItemsAsync()
