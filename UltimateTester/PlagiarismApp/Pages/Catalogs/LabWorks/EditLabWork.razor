@@ -1,0 +1,76 @@
+﻿@page "/lab_works/{id}"
+@using Data.Database
+@using Microsoft.Extensions.Logging
+@using PlagiarismApp.Models
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@if (_model != null)
+{
+    <h3>Editing lab work: @_model.Name</h3>
+
+    <EditForm Model="@_model" OnValidSubmit="@UpdateLabWork">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div>
+            <label>Name:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="name" @bind-Value="_model.Name" />
+        </div>
+        <div>
+            <label>Description:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="description" @bind-Value="_model.Description" />
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+
+    </EditForm>
+}
+else 
+{
+    <OnDataLoading />
+}
+
+@code {
+    private LabWorkModel? _model;
+
+    private LabWork? labWork;
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        labWork = await HttpClient.GetFromJsonAsync<LabWork>
+            (NavigationManager.BaseUri + "api/data/getlabwork/" + Id);
+
+        if (labWork != null)
+        {
+            _model = new LabWorkModel()
+                {
+                    Name = labWork.Name,
+                    Description = labWork.Description
+                };
+        }
+    }
+
+    private async Task UpdateLabWork()
+    {
+        Edit();
+        var response = await HttpClient.PutAsJsonAsync(NavigationManager.BaseUri +
+                                                       "api/data/putlabwork", labWork);
+        NavigationManager.NavigateTo("/lab_works");
+    }
+
+    private void Edit()
+    {
+        labWork.Name = _model.Name;
+        labWork.Description = _model.Description;
+    }
+}

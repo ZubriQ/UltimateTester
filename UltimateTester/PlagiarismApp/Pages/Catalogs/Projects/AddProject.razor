@@ -1,0 +1,60 @@
+﻿@page "/projects/add_project"
+@using Data.Database
+@using Microsoft.Extensions.Logging
+@using PlagiarismApp.Models
+@inject ProjectService ProjectService
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+@*
+<h3>AddProject</h3>
+
+
+<EditForm Model="@projectModel" OnValidSubmit="@CreateAndSaveProject">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Name:</label>
+    </div>
+    <div class="form-floating" style="margin:10px">
+        <InputText id="name" @bind-Value="projectModel.Name" />
+    </div>
+    <div>
+        <label>Description:</label>
+    </div>
+    <div class="form-floating" style="margin:10px">
+        <InputText id="description" @bind-Value="projectModel.Description" />
+    </div>
+    <div class="form-floating" style="margin:10px">
+        <button type="submit" class="btn btn-primary">Insert</button>
+        <button type="reset" class="btn btn-primary" @onclick="Cancel">Cancel</button>
+    </div>
+
+</EditForm>
+
+@code {
+    private ProjectModel projectModel = new();
+
+    private void CreateAndSaveProject()
+    {
+        ProjectService.Add(CreateProject());
+        ProjectService.SaveChanges();
+        NavigationManager.NavigateTo("/projects");
+    }
+
+    private Project CreateProject()
+    {
+        return new Project()
+            {
+                Name = projectModel.Name,
+                
+                
+            };
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/projects");
+    }
+}
+*@

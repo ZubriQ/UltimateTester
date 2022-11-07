@@ -1,0 +1,69 @@
+﻿@page "/projects"
+@using Data.Database
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@if (projects != null)
+{
+    <h3>Projects:</h3>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Project name</th>
+                <th>Full name</th>
+                <th>Lab</th>
+                <th>Lab description</th>
+                <th>Git URL</th>
+                <th>Disc path</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var project in projects)
+            {
+                <tr>
+                    <td>@project.Name</td>
+                    <td>@project.Student.FullName</td>
+                    <td>@project.LabWork.Name</td>
+                    <td>@project.LabWork.Description</td>
+                    @if (!string.IsNullOrEmpty(@project.GitUrl))
+                    {
+                        <td>@project.GitUrl</td>
+                    }
+                    else
+                    {
+                        <td style="color:darkgray">No</td>
+                    }
+                    @if (!string.IsNullOrEmpty(@project.PathOnDisc))
+                    {
+                        <td>@project.PathOnDisc</td>
+                    }
+                    else
+                    {
+                        <td style="color:darkgray">No</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <OnDataLoading />
+}
+
+@code {
+    private Project[]? projects { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjects();
+    }
+
+    private async Task LoadProjects()
+    {
+        projects = await HttpClient.GetFromJsonAsync<Project[]>
+            (NavigationManager.BaseUri + "api/data/getprojects");
+    }
+}

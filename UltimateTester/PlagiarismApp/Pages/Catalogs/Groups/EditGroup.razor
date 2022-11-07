@@ -1,0 +1,67 @@
+﻿@page "/groups/{id}"
+@using Data.Database
+@using Microsoft.Extensions.Logging
+@using PlagiarismApp.Models
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@inject ILogger<EditGroup> Logger
+@attribute [Authorize]
+
+@if (_model != null)
+{
+    <h3>Editing group: @_model.Name</h3>
+
+    <EditForm Model="@_model" OnValidSubmit="@UpdateGroup">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div>
+            <label>Name:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="name" @bind-Value="_model.Name" />
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+    </EditForm>
+}
+else 
+{
+    <OnDataLoading />
+}
+
+@code {
+    private GroupModel? _model;
+
+    private Group? group;
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        group = await HttpClient.GetFromJsonAsync<Group>
+            (NavigationManager.BaseUri + "api/data/getgroup/" + Id);
+
+        if (group != null)
+        {
+            _model = new GroupModel() { Name = group.Name };
+        }
+    }
+
+    private async Task UpdateGroup()
+    {
+        Logger.LogInformation("UpdateGroup called");
+
+        Edit();
+        var response = await HttpClient.PutAsJsonAsync(NavigationManager.BaseUri +
+                                                       "api/data/putgroup", group);
+        NavigationManager.NavigateTo("/groups");
+    }
+
+    private void Edit()
+    {
+        group.Name = _model.Name;
+    }
+}

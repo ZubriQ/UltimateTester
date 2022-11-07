@@ -1,0 +1,101 @@
+﻿@page "/students/add_student"
+@using Data.Database
+@using Microsoft.Extensions.Logging
+@using PlagiarismApp.Models
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@if (groups != null)
+{
+    <h3>Adding a new student:</h3>
+
+    <EditForm Model="@_model" OnValidSubmit="@PostStudent">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div>
+            <label>First Name:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="firstName" @bind-Value="_model.FirstName" />
+        </div>
+        <div>
+            <label>Surname:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="surname" @bind-Value="_model.Surname" />
+        </div>
+        <div>
+            <label>Patronymic:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="patronymic" @bind-Value="_model.Patronymic" />
+        </div>
+        <div>
+            <label>Group:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <select @bind="_model.SelectedGroupId">
+                <option value=""></option>
+                @foreach (var group in groups)
+                {
+                    <option value="@group.Id"> @group.Name </option>
+                }
+            </select>
+        </div>
+
+        <div class="form-floating" style="margin:10px">
+            <button type="submit" class="btn btn-primary">Insert</button>
+            <button type="reset" class="btn btn-primary" @onclick="Cancel">Cancel</button>
+        </div>
+
+    </EditForm>
+}
+else 
+{
+    <OnDataLoading />
+}
+
+@code {
+    private StudentModel _model = new();
+
+    private Group[] groups;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var items = await HttpClient.GetFromJsonAsync<Group[]>
+            (NavigationManager.BaseUri + "api/data/getgroups/");
+
+        if (items != null)
+        {
+            groups = items;
+        }
+    }
+
+    private async Task PostStudent()
+    {
+        var response = await HttpClient.PostAsJsonAsync(
+            NavigationManager.BaseUri + "api/data/poststudent", CreateStudent());
+        NavigationManager.NavigateTo("/students");
+    }
+
+    private Student CreateStudent()
+    {
+        return new Student()
+            {
+                FirstName = _model.FirstName,
+                Surname = _model.Surname,
+                Patronymic = _model.Patronymic,
+                Group = new Group()
+                {
+                    Name = groups.Single(g => g.Id == _model.SelectedGroupId).Name
+                }
+            };
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/students");
+    }
+}

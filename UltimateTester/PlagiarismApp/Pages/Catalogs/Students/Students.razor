@@ -1,0 +1,90 @@
+﻿@page "/students"
+@using Data.Database
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@if (students != null)
+{
+    <h3>Students:</h3>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>First name</th>
+                <th>Surname</th>
+                <th>Patronymic</th>
+                <th>Group</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var student in students)
+            {
+                <tr>
+                    <td>@student.FirstName</td>
+                    <td>@student.Surname</td>
+                    @if (!string.IsNullOrEmpty(@student.Patronymic))
+                    {
+                        <td>@student.Patronymic</td>
+                    }
+                    else
+                    {
+                        <td style="color:darkgray">No</td>
+                    }
+                    <td>@student.Group.Name</td>
+                    <td>
+                        <a href="@GetHrefForEditPage(student)">Edit</a>
+                    </td>
+                    <td>
+                        <a href="students/" @onclick="(() => DeleteElement(student.Id))">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button class="btn btn-primary" @onclick="NavigateToAddStudentPage">
+        Add
+    </button>
+}
+else
+{
+    <OnDataLoading />
+}
+
+@code {
+    private Student[]? students { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateTableData();
+    }
+
+    private async Task UpdateTableData()
+    {
+        students = await HttpClient.GetFromJsonAsync<Student[]>
+            (NavigationManager.BaseUri + "api/data/getstudents");
+    }
+
+    private async Task DeleteElement(int studentId)
+    {
+        var response = await HttpClient.DeleteAsync(NavigationManager.BaseUri +
+            "api/data/deletestudent/" + studentId);
+        if (response.ReasonPhrase == "OK")
+        {
+            await UpdateTableData();
+        }
+    }
+
+    private string GetHrefForEditPage(Student student)
+    {
+        return "students/" + student.Id;
+    }
+
+    private void NavigateToAddStudentPage()
+    {
+        NavigationManager.NavigateTo("students/add_student");
+    }
+}

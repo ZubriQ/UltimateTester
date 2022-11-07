@@ -12,10 +12,10 @@ namespace PlagiarismApp.Models
         public string Surname { get; set; }
 
         [MaxLength(50)]
-        public string Patronymic { get; set; }
+        public string? Patronymic { get; set; }
 
         [Required]
-        public Group Group { get; set; }
+        public int SelectedGroupId { get; set; }
 
         public StudentModel()
         {

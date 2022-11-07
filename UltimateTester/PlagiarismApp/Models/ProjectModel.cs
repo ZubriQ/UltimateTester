@@ -15,10 +15,10 @@ namespace PlagiarismApp.Models
         public string PathOnDisc { get; set; }
 
         [Required]
-        public Student Student { get; set; }
+        public int SelectedStudentId { get; set; }
 
         [Required]
-        public LabWork LabWork { get; set; }
+        public int SelectedLabWorkId { get; set; }
 
         public ProjectModel()
         {

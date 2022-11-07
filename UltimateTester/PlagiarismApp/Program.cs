@@ -1,21 +1,20 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using PlagiarismApp;
-using PlagiarismApp.Data;
-using PlagiarismApp.Data.AspNetTables;
 using PlagiarismApp.Data.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<ProjectService>();
 builder.Services.AddSingleton<StudentService>();
 builder.Services.AddSingleton<LabWorkService>();
 builder.Services.AddSingleton<GroupService>();
+builder.Services.AddSingleton<HttpClient>();
+builder.Services.AddControllersWithViews()
+    .AddNewtonsoftJson(options =>
+    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+    );
 
 var connectionString = builder.Configuration.GetConnectionString("Connection");
 builder.Services.AddDbContext<IdentityDataContext>(options => options.UseSqlServer(connectionString));
@@ -35,7 +34,8 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    // The default HSTS value is 30 days. You may want to change this
+    // for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -49,5 +49,8 @@ app.UseAuthorization();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

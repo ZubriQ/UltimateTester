@@ -1,0 +1,79 @@
+﻿@page "/lab_works"
+@using Data.Database
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@if (labWorks != null)
+{
+    <h3>Lab works:</h3>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var labWork in labWorks)
+            {
+                <tr>
+                    <td>@labWork.Name</td>
+                    <td>@labWork.Description</td>
+                    <td>
+                        <a href="@GetHrefForEditPage(labWork)">Edit</a>
+                    </td>
+                    <td>
+                        <a href="lab_works/" @onclick="(() => DeleteElement(labWork.Id))">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button class="btn btn-primary" @onclick="NavigateToAddLabWorkPage">
+        Add
+    </button>
+}
+else
+{
+    <OnDataLoading />
+}
+
+@code {
+    private List<LabWork>? labWorks { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateTableData();
+    }
+
+    private async Task UpdateTableData()
+    {
+        labWorks = await HttpClient.GetFromJsonAsync<List<LabWork>>
+            (NavigationManager.BaseUri + "api/data/getlabworks");
+    }
+
+    private async Task DeleteElement(int labWorkId)
+    {
+        var response = await HttpClient.DeleteAsync(NavigationManager.BaseUri +
+            "api/data/deletelabwork/" + labWorkId);
+        if (response.ReasonPhrase == "OK")
+        {
+            await UpdateTableData();
+        }
+    }
+
+    private string GetHrefForEditPage(LabWork labWork)
+    {
+        return "lab_works/" + labWork.Id;
+    }
+
+    private void NavigateToAddLabWorkPage()
+    {
+        NavigationManager.NavigateTo("lab_works/add_lab_work");
+    }
+}

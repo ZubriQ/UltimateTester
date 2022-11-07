@@ -2,13 +2,13 @@
 @using Data.Database
 @using Microsoft.Extensions.Logging
 @using PlagiarismApp.Models
-@inject LabWorkService LabWorkService
+@inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
 @attribute [Authorize]
 
 <h3>Adding a new lab work:</h3>
 
-<EditForm Model="@labWorkModel" OnValidSubmit="@CreateAndSaveLabWork">
+<EditForm Model="@_model" OnValidSubmit="@CreateAndSaveLabWork">
     <DataAnnotationsValidator />
     <ValidationSummary />
 
@@ -16,13 +16,13 @@
         <label>Name:</label>
     </div>
     <div class="form-floating" style="margin:10px">
-        <InputText id="name" @bind-Value="labWorkModel.Name" />
+        <InputText id="name" @bind-Value="_model.Name" />
     </div>
     <div>
         <label>Description:</label>
     </div>
     <div class="form-floating" style="margin:10px">
-        <InputText id="description" @bind-Value="labWorkModel.Description" />
+        <InputText id="description" @bind-Value="_model.Description" />
     </div>
     <div class="form-floating" style="margin:10px">
         <button type="submit" class="btn btn-primary">Insert</button>
@@ -32,21 +32,31 @@
 </EditForm>
 
 @code {
-    private LabWorkModel labWorkModel = new();
+    private LabWorkModel _model = new();
 
-    private void CreateAndSaveLabWork()
+    private async Task CreateAndSaveLabWork()
     {
-        LabWorkService.Add(CreateLabWork());
-        LabWorkService.SaveChanges();
+        LabWork newLabWork = new LabWork()
+            {
+                Name = _model.Name,
+                Description = _model.Description
+            };
+        await PostLabWork(newLabWork);
         NavigationManager.NavigateTo("/lab_works");
+    }
+
+    private async Task PostLabWork(LabWork labWork)
+    {
+        var response = await HttpClient.PostAsJsonAsync(NavigationManager.BaseUri +
+                                                        "api/data/postlabwork", labWork);
     }
 
     private LabWork CreateLabWork()
     {
         return new LabWork()
             {
-                Name = labWorkModel.Name,
-                Description = labWorkModel.Description
+                Name = _model.Name,
+                Description = _model.Description
             };
     }
 

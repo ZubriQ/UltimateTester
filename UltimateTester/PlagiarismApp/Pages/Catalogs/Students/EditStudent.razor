@@ -1,0 +1,110 @@
+﻿@page "/students/{id}"
+@using Data.Database
+@using Microsoft.Extensions.Logging
+@using PlagiarismApp.Models
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@if (groups != null && student != null)
+{
+    <h3>Editing student:</h3>
+
+    <EditForm Model="@_model" OnValidSubmit="@UpdateStudent">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div>
+            <label>First Name:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="firstName" @bind-Value="_model.FirstName" />
+        </div>
+        <div>
+            <label>Surname:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="surname" @bind-Value="_model.Surname" />
+        </div>
+        <div>
+            <label>Patronymic:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="patronymic" @bind-Value="_model.Patronymic" />
+        </div>
+        <div>
+            <label>Group:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <select @bind="_model.SelectedGroupId">
+                <option value=""></option>
+                @foreach (var group in groups)
+                {
+                    <option value="@group.Id"> @group.Name </option>
+                }
+            </select>
+        </div>
+
+        <div class="form-floating" style="margin:10px">
+            <button type="submit" class="btn btn-primary">Insert</button>
+            <button type="reset" class="btn btn-primary" @onclick="Cancel">Cancel</button>
+        </div>
+
+    </EditForm>
+}
+else
+{
+    <OnDataLoading />
+}
+
+@code {
+    private StudentModel _model = new();
+
+    private Group[]? groups;
+
+    private Student? student;
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var items = await HttpClient.GetFromJsonAsync<Group[]>
+            (NavigationManager.BaseUri + "api/data/getgroups/");
+        if (items != null)
+        {
+            groups = items;
+        }
+
+        student = await HttpClient.GetFromJsonAsync<Student>
+            (NavigationManager.BaseUri + "api/data/getstudent/" + Id);
+        if (student != null)
+        {
+            _model.FirstName = student.FirstName;
+            _model.Surname = student.Surname;
+            _model.Patronymic = student.Patronymic;
+            _model.SelectedGroupId = student.Group.Id;
+        }
+    }
+
+    private async Task UpdateStudent()
+    {
+        Edit();
+        var response = await HttpClient.PutAsJsonAsync(
+            NavigationManager.BaseUri + "api/data/putstudent", student);
+        NavigationManager.NavigateTo("/students");
+    }
+
+    private void Edit()
+    {
+        student.FirstName = _model.FirstName;
+        student.Surname = _model.Surname;
+        student.Patronymic = _model.Patronymic;
+        student.Group = groups.Single(g => g.Id == _model.SelectedGroupId);
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/students");
+    }
+}

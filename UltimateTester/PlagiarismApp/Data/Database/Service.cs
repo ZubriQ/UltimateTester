@@ -2,11 +2,11 @@
 {
     public abstract class Service<T>
     {
-        protected PlagiarismContext database { get; set; }
+        protected IdentityDataContext database { get; set; }
 
         public Service()
         {
-            database = new PlagiarismContext();
+            database = new IdentityDataContext();
         }
 
         public abstract Task<T[]> GetItemsAsync();

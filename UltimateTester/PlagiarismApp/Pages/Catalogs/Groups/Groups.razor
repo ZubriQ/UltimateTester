@@ -1,0 +1,77 @@
+﻿@page "/groups"
+@using Data.Database
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@if (groups != null)
+{
+    <h3>Groups:</h3>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var group in groups)
+            {
+                <tr>
+                    <td>@group.Name</td>
+                    <td>
+                        <a href="@GetHrefForEditPage(group)">Edit</a>
+                    </td>
+                    <td>
+                        <a href="groups/" @onclick="(() => DeleteElement(group.Id))">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button class="btn btn-primary" @onclick="NavigateToAddGroupPage">
+        Add
+    </button>
+}
+else
+{
+    <OnDataLoading />
+}
+
+@code {
+    private List<Group>? groups { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateTableData();
+    }
+
+    private async Task UpdateTableData()
+    {
+        groups = await HttpClient.GetFromJsonAsync<List<Group>>
+            (NavigationManager.BaseUri + "api/data/getgroups");
+    }
+
+    private async Task DeleteElement(int groupId)
+    {
+        var response = await HttpClient.DeleteAsync(NavigationManager.BaseUri + 
+            "api/data/deletegroup/" + groupId);
+        if (response.ReasonPhrase == "OK")
+        {
+            await UpdateTableData();
+        }
+    }
+
+    private string GetHrefForEditPage(Group group)
+    {
+        return "groups/" + group.Id;
+    }
+
+    private void NavigateToAddGroupPage()
+    {
+        NavigationManager.NavigateTo("groups/add_group");
+    }
+}
