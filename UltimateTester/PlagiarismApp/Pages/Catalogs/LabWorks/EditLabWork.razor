@@ -47,9 +47,18 @@ else
 
     protected async override Task OnInitializedAsync()
     {
+        await InitializeLabWorks();
+        InitializeModel();
+    }
+
+    private async Task InitializeLabWorks()
+    {
         labWork = await HttpClient.GetFromJsonAsync<LabWork>
             (NavigationManager.BaseUri + "api/data/getlabwork/" + Id);
+    }
 
+    private void InitializeModel()
+    {
         if (labWork != null)
         {
             _model = new LabWorkModel()

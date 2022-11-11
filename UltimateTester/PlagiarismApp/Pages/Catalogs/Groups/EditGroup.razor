@@ -41,9 +41,17 @@ else
 
     protected async override Task OnInitializedAsync()
     {
+        await InitializeGroups();
+        InitializeModel();
+    }
+    private async Task InitializeGroups()
+    {
         group = await HttpClient.GetFromJsonAsync<Group>
             (NavigationManager.BaseUri + "api/data/getgroup/" + Id);
+    }
 
+    private void InitializeModel()
+    {
         if (group != null)
         {
             _model = new GroupModel() { Name = group.Name };
@@ -55,8 +63,8 @@ else
         Logger.LogInformation("UpdateGroup called");
 
         Edit();
-        var response = await HttpClient.PutAsJsonAsync(NavigationManager.BaseUri +
-                                                       "api/data/putgroup", group);
+        await HttpClient.PutAsJsonAsync(NavigationManager.BaseUri +
+                                        "api/data/putgroup", group);
         NavigationManager.NavigateTo("/groups");
     }
 

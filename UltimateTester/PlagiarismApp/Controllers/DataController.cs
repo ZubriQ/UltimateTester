@@ -7,7 +7,7 @@ namespace PlagiarismApp.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class DataController : ControllerBase
+    public class DataController : Controller
     {
         private readonly IdentityDataContext _database;
 
@@ -44,7 +44,7 @@ namespace PlagiarismApp.Controllers
                 {
                     return NotFound($"Project cannot be null.");
                 }
-                _database.Projects.Add(project);
+                _database.Entry(project).State = EntityState.Added;
                 await _database.SaveChangesAsync();
                 return project;
             }
@@ -55,7 +55,7 @@ namespace PlagiarismApp.Controllers
             }
         }
 
-        [HttpPut]
+        [HttpPut] // TODO: putprojects does not work
         public async Task<ActionResult<Project>> PutProject(Project project)
         {
             try
@@ -201,7 +201,7 @@ namespace PlagiarismApp.Controllers
                 {
                     return NotFound($"Student cannot be null.");
                 }
-                _database.Students.Add(student);
+                _database.Entry(student).State = EntityState.Added;
                 await _database.SaveChangesAsync();
                 return student;
             }

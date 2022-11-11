@@ -6,7 +6,7 @@
 @inject NavigationManager NavigationManager
 @attribute [Authorize]
 
-@if (groups != null && student != null)
+@if (_groups != null && _student != null)
 {
     <h3>Editing student:</h3>
 
@@ -38,7 +38,7 @@
         <div class="form-floating" style="margin:10px">
             <select @bind="_model.SelectedGroupId">
                 <option value=""></option>
-                @foreach (var group in groups)
+                @foreach (var group in _groups)
                 {
                     <option value="@group.Id"> @group.Name </option>
                 }
@@ -46,7 +46,7 @@
         </div>
 
         <div class="form-floating" style="margin:10px">
-            <button type="submit" class="btn btn-primary">Insert</button>
+            <button type="submit" class="btn btn-primary">Update</button>
             <button type="reset" class="btn btn-primary" @onclick="Cancel">Cancel</button>
         </div>
 
@@ -60,30 +60,41 @@ else
 @code {
     private StudentModel _model = new();
 
-    private Group[]? groups;
+    private Group[]? _groups;
 
-    private Student? student;
+    private Student? _student;
 
     [Parameter]
     public string? Id { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        var items = await HttpClient.GetFromJsonAsync<Group[]>
-            (NavigationManager.BaseUri + "api/data/getgroups/");
-        if (items != null)
-        {
-            groups = items;
-        }
+        await InitializeGroups();
+        await InitializeStudent();
+        InitializeModel();
+    }
 
-        student = await HttpClient.GetFromJsonAsync<Student>
+    private async Task InitializeGroups()
+    {
+        _groups = await HttpClient.GetFromJsonAsync<Group[]>
+            (NavigationManager.BaseUri + "api/data/getgroups/");
+    }
+
+    private async Task InitializeStudent()
+    {
+        var student = await HttpClient.GetFromJsonAsync<Student?>
             (NavigationManager.BaseUri + "api/data/getstudent/" + Id);
-        if (student != null)
+        _student = student;
+    }
+
+    private void InitializeModel()
+    {
+        if (_student != null)
         {
-            _model.FirstName = student.FirstName;
-            _model.Surname = student.Surname;
-            _model.Patronymic = student.Patronymic;
-            _model.SelectedGroupId = student.Group.Id;
+            _model.FirstName = _student.FirstName;
+            _model.Surname = _student.Surname;
+            _model.Patronymic = _student.Patronymic;
+            _model.SelectedGroupId = _student.Group.Id;
         }
     }
 
@@ -91,16 +102,16 @@ else
     {
         Edit();
         var response = await HttpClient.PutAsJsonAsync(
-            NavigationManager.BaseUri + "api/data/putstudent", student);
+            NavigationManager.BaseUri + "api/data/putstudent", _student);
         NavigationManager.NavigateTo("/students");
     }
 
     private void Edit()
     {
-        student.FirstName = _model.FirstName;
-        student.Surname = _model.Surname;
-        student.Patronymic = _model.Patronymic;
-        student.Group = groups.Single(g => g.Id == _model.SelectedGroupId);
+        _student.FirstName = _model.FirstName;
+        _student.Surname = _model.Surname;
+        _student.Patronymic = _model.Patronymic;
+        _student.Group = _groups.Single(g => g.Id == _model.SelectedGroupId);
     }
 
     private void Cancel()

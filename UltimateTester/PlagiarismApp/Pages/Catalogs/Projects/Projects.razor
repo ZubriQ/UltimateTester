@@ -17,6 +17,8 @@
                 <th>Lab description</th>
                 <th>Git URL</th>
                 <th>Disc path</th>
+                <th>Edit</th>
+                <th>Delete</th>
             </tr>
         </thead>
         <tbody>
@@ -43,10 +45,23 @@
                     {
                         <td style="color:darkgray">No</td>
                     }
+                    <td>
+                        <a href="@GetHrefForEditPage(project)">Edit</a>
+                    </td>
+                    <td>
+                        <a href="projects/" @onclick="(() => DeleteElement(
+                            project.StudentId, project.LabWorkId))">
+                            Delete
+                        </a>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
+
+    <button class="btn btn-primary" @onclick="NavigateToAddProjectPage">
+        Add
+    </button>
 }
 else
 {
@@ -58,12 +73,32 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadProjects();
+        await GetProjectsData();
     }
 
-    private async Task LoadProjects()
+    private async Task GetProjectsData()
     {
         projects = await HttpClient.GetFromJsonAsync<Project[]>
             (NavigationManager.BaseUri + "api/data/getprojects");
+    }
+
+    private async Task DeleteElement(int studentId, int labWorkId)
+    {
+        var response = await HttpClient.DeleteAsync(NavigationManager.BaseUri +
+            "api/data/deleteproject/" + studentId + '/' + labWorkId);
+        if (response.ReasonPhrase == "OK")
+        {
+            await GetProjectsData();
+        }
+    }
+
+    private string GetHrefForEditPage(Project project)
+    {
+        return "projects/" + project.StudentId + '/' + project.LabWorkId;
+    }
+
+    private void NavigateToAddProjectPage()
+    {
+        NavigationManager.NavigateTo("projects/add_project");
     }
 }

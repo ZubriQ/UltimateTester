@@ -60,23 +60,18 @@ else
 @code {
     private StudentModel _model = new();
 
-    private Group[] groups;
+    private Group[]? groups;
 
     protected override async Task OnInitializedAsync()
     {
-        var items = await HttpClient.GetFromJsonAsync<Group[]>
+        groups = await HttpClient.GetFromJsonAsync<Group[]>
             (NavigationManager.BaseUri + "api/data/getgroups/");
-
-        if (items != null)
-        {
-            groups = items;
-        }
     }
 
     private async Task PostStudent()
     {
-        var response = await HttpClient.PostAsJsonAsync(
-            NavigationManager.BaseUri + "api/data/poststudent", CreateStudent());
+        await HttpClient.PostAsJsonAsync(NavigationManager.BaseUri
+            + "api/data/poststudent", CreateStudent());
         NavigationManager.NavigateTo("/students");
     }
 
@@ -87,10 +82,7 @@ else
                 FirstName = _model.FirstName,
                 Surname = _model.Surname,
                 Patronymic = _model.Patronymic,
-                Group = new Group()
-                {
-                    Name = groups.Single(g => g.Id == _model.SelectedGroupId).Name
-                }
+                Group = groups.Single(g => g.Id == _model.SelectedGroupId)
             };
     }
 

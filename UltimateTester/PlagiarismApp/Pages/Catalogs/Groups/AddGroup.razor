@@ -40,8 +40,8 @@
 
     private async Task PostGroup(Group group)
     {
-        var response = await HttpClient.PostAsJsonAsync(NavigationManager.BaseUri +
-                                                        "api/data/postgroup", group);
+        await HttpClient.PostAsJsonAsync(NavigationManager.BaseUri +
+                                         "api/data/postgroup", group);
     }
 
     private void Cancel()

@@ -35,10 +35,14 @@
                     }
                     <td>@student.Group.Name</td>
                     <td>
-                        <a href="@GetHrefForEditPage(student)">Edit</a>
+                        <a href="@GetHrefForEditPage(student)">
+                            Edit
+                        </a>
                     </td>
                     <td>
-                        <a href="students/" @onclick="(() => DeleteElement(student.Id))">Delete</a>
+                        <a href="students/" @onclick="(() => DeleteElement(student.Id))">
+                            Delete
+                        </a>
                     </td>
                 </tr>
             }

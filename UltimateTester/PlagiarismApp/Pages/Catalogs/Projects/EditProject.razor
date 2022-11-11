@@ -1,5 +1,161 @@
-﻿<h3>EditProject</h3>
+﻿@page "/projects/{studentId}/{labWorkId}"
+@using Data.Database
+@using System.Net.Http.Json;
+@using Microsoft.Extensions.Logging
+@using PlagiarismApp.Models
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@if (labWorks != null && students != null && project != null)
+{
+    <h3>Editing project:</h3>
+
+    <EditForm Model="@_model" OnValidSubmit="@UpdateProject">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div>
+            <label>Name:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="name" @bind-Value="_model.Name" />
+        </div>
+        <div>
+            <label>Git URL:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="gitUrl" @bind-Value="_model.GitUrl" />
+        </div>
+        <div>
+            <label>Path on disc:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputText id="pathOnDisc" @bind-Value="_model.PathOnDisc" />
+        </div>
+        <div>
+            <label>Student:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <select @bind="_model.SelectedStudentId">
+                <option value=""></option>
+                @foreach (var student in students)
+                {
+                    <option value="@student.Id">
+                        @(student.Group.Name + " " + student.FullName)
+                    </option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>Lab work:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <select @bind="_model.SelectedLabWorkId">
+                <option value=""></option>
+                @foreach (var labWork in labWorks)
+                {
+                    <option value="@labWork.Id">
+                        @(labWork.Name + " " + labWork.Description)
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="form-floating" style="margin:10px">
+            <button type="submit" class="btn btn-primary">
+                Update
+            </button>
+            <button type="reset" class="btn btn-primary" @onclick="Cancel">
+                Cancel
+            </button>
+        </div>
+
+    </EditForm>
+}
+else
+{
+    <OnDataLoading />
+}
 
 @code {
+    private ProjectModel _model = new();
 
+    private LabWork[]? labWorks;
+
+    private Student[]? students;
+
+    private Project? project;
+
+    [Parameter]
+    public string? StudentId { get; set; }
+
+    [Parameter]
+    public string? LabWorkId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializeLabWorks();
+        await InitializeStudents();
+        await InitializeProject();
+        InitializeModel();
+    }
+
+    private async Task InitializeLabWorks()
+    {
+        labWorks = await HttpClient.GetFromJsonAsync<LabWork[]>
+            (NavigationManager.BaseUri + "api/data/getlabworks/");
+    }
+
+    private async Task InitializeStudents()
+    {
+        students = await HttpClient.GetFromJsonAsync<Student[]>
+            (NavigationManager.BaseUri + "api/data/getstudents/");
+    }
+
+    private async Task InitializeProject()
+    {
+        project = await HttpClient.GetFromJsonAsync<Project>
+            (NavigationManager.BaseUri + "api/data/getproject/" +
+            StudentId + '/' + LabWorkId);
+    }
+
+    private void InitializeModel()
+    {
+        if (project != null)
+        {
+            _model.Name = project.Name;
+            _model.GitUrl = project.GitUrl;
+            _model.PathOnDisc = project.PathOnDisc;
+            _model.SelectedStudentId = project.StudentId;
+            _model.SelectedLabWorkId = project.LabWorkId;
+        }
+    }
+
+    private async Task UpdateProject()
+    {
+        Edit();
+        //await HttpClient.SendJsonAsync(HttpMethod.Put, "api/data/putproject", project);
+        var response = await HttpClient.PutAsJsonAsync(NavigationManager.BaseUri + 
+            "api/data/putproject", project);
+        int k = 0;
+        //NavigationManager.NavigateTo("/projects");
+    }
+
+    private void Edit()
+    {
+        if (project != null && students != null && labWorks != null)
+        {
+            project.Name = _model.Name;
+            project.GitUrl = _model.GitUrl;
+            project.PathOnDisc = _model.PathOnDisc;
+            project.Student = students.Single(s => s.Id == _model.SelectedStudentId);
+            project.LabWork = labWorks.Single(l => l.Id == _model.SelectedLabWorkId);
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/projects");
+    }
 }
