@@ -105,22 +105,21 @@ else
     private async Task PostProject()
     {
         Project project = CreateProject();
-        var response = await HttpClient.PostAsJsonAsync(NavigationManager.BaseUri +
-            "api/data/postproject", project);
+        var response = await HttpClient.PostAsJsonAsync<Project>(
+            NavigationManager.BaseUri + "api/data/postproject/" +
+            project.StudentId + '/' + project.LabWorkId, project);
         NavigationManager.NavigateTo("/projects");
     }
 
     private Project CreateProject()
     {
-        var student = students.Single(s => s.Id == _model.SelectedStudentId);
-        var labWork = labWorks.Single(l => l.Id == _model.SelectedLabWorkId);
         Project newProject = new Project()
             {
                 Name = _model.Name,
                 GitUrl = _model.GitUrl,
                 PathOnDisc = _model.PathOnDisc,
-                Student = student,
-                LabWork = labWork
+                StudentId = _model.SelectedStudentId,
+                LabWorkId = _model.SelectedLabWorkId
             };
         return newProject;
     }

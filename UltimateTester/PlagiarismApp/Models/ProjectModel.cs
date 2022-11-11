@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using PlagiarismApp.Data.Database;
+using System.ComponentModel.DataAnnotations;
 
 namespace PlagiarismApp.Models
 {

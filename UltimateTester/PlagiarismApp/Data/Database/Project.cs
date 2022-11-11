@@ -11,7 +11,7 @@ namespace PlagiarismApp.Data.Database
         public int StudentId { get; set; }
         public int LabWorkId { get; set; }
 
-        public virtual LabWork LabWork { get; set; } = null!;
-        public virtual Student Student { get; set; } = null!;
+        public virtual LabWork? LabWork { get; set; } = null;
+        public virtual Student? Student { get; set; } = null;
     }
 }

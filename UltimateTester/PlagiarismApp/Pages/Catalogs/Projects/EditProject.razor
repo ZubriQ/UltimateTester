@@ -135,11 +135,10 @@ else
     private async Task UpdateProject()
     {
         Edit();
-        //await HttpClient.SendJsonAsync(HttpMethod.Put, "api/data/putproject", project);
-        var response = await HttpClient.PutAsJsonAsync(NavigationManager.BaseUri + 
-            "api/data/putproject", project);
-        int k = 0;
-        //NavigationManager.NavigateTo("/projects");
+        var response = await HttpClient.PutAsJsonAsync<Project?>(
+            NavigationManager.BaseUri + "api/data/putproject/" +
+            StudentId + '/' + LabWorkId, project);
+        NavigationManager.NavigateTo("/projects");
     }
 
     private void Edit()
@@ -149,8 +148,10 @@ else
             project.Name = _model.Name;
             project.GitUrl = _model.GitUrl;
             project.PathOnDisc = _model.PathOnDisc;
-            project.Student = students.Single(s => s.Id == _model.SelectedStudentId);
-            project.LabWork = labWorks.Single(l => l.Id == _model.SelectedLabWorkId);
+            project.Student = null;
+            project.LabWork = null;
+            project.StudentId = _model.SelectedStudentId;
+            project.LabWorkId = _model.SelectedLabWorkId;
         }
     }
 

@@ -47,8 +47,8 @@
 
     private async Task PostLabWork(LabWork labWork)
     {
-        await HttpClient.PostAsJsonAsync(NavigationManager.BaseUri +
-                                         "api/data/postlabwork", labWork);
+        var response = await HttpClient.PostAsJsonAsync(
+            NavigationManager.BaseUri + "api/data/postlabwork", labWork);
     }
 
     private LabWork CreateLabWork()

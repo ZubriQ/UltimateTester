@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PlagiarismApp.Data.Database;
 using PlagiarismApp.Pages.Catalogs.Students;
@@ -26,8 +27,8 @@ namespace PlagiarismApp.Controllers
         }
 
         [HttpGet("{studentId:int}/{labWorkId:int}")]
-        public async Task<ActionResult<Project?>> GetProject(int studentId, 
-                                                             int labWorkId)
+        public async Task<ActionResult<Project?>> GetProject([FromRoute] int studentId, 
+                                                             [FromRoute] int labWorkId)
         {
             return await _database.Projects.Include(p => p.LabWork)
                                            .Include(p => p.Student)
@@ -35,14 +36,19 @@ namespace PlagiarismApp.Controllers
                                                                      && p.LabWorkId == labWorkId);
         }
 
-        [HttpPost]
-        public async Task<ActionResult<Project>> PostProject(Project project)
+        [HttpPost("{studentId:int}/{labWorkId:int}")]
+        public async Task<ActionResult<Project>> PostProject([FromRoute] int studentId,
+                                                             [FromRoute] int labWorkId,
+                                                             [FromBody] Project project)
         {
             try
             {
-                if (project == null)
+                var projectExists = _database.Projects.FirstOrDefaultAsync(p =>
+                    p.StudentId == studentId && p.LabWorkId == labWorkId);
+                if (project == null || projectExists != null)
                 {
-                    return NotFound($"Project cannot be null.");
+                    return NotFound($"Project cannot be null or" +
+                        $" such a project already exists");
                 }
                 _database.Entry(project).State = EntityState.Added;
                 await _database.SaveChangesAsync();
@@ -50,39 +56,47 @@ namespace PlagiarismApp.Controllers
             }
             catch (Exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    "Error inserting data");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error inserting data");
             }
         }
 
-        [HttpPut] // TODO: putprojects does not work
-        public async Task<ActionResult<Project>> PutProject(Project project)
+        [HttpPut("{studentId:int}/{labWorkId:int}")]
+        public async Task<ActionResult<Project>> PutProject([FromRoute] int studentId,
+                                                            [FromRoute] int labWorkId,
+                                                            [FromBody] Project project)
         {
             try
             {
-                if (project == null)
+                if (ModelState.IsValid && project != null)
                 {
-                    return NotFound($"Project cannot be null.");
+                    var existingProject = _database.Projects.FirstOrDefaultAsync(p =>
+                        p.StudentId == studentId && p.LabWorkId == labWorkId).Result;
+                    if (existingProject == null)
+                    {
+                        return NotFound($"Project does not exist");
+                    }
+                    ControllerHelper.UpdateProjectValues(existingProject, project);
+                    return await ControllerHelper.UpdateAndSaveProject(_database, existingProject);
                 }
-                _database.Attach(project);
-                _database.Entry(project).State = EntityState.Modified;
-                await _database.SaveChangesAsync();
-                return project;
+                else
+                {
+                    return BadRequest(ModelState);
+                }
             }
             catch (Exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    "Error updating data");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error updating data");
             }
         }
 
         [HttpDelete("{studentId:int}/{labWorkId:int}")]
-        public async Task<ActionResult<Project>> DeleteProject(int studentId, int labWorkId)
+        public async Task<ActionResult<Project>> DeleteProject([FromRoute] int studentId,
+                                                               [FromRoute] int labWorkId)
         {
             try
             {
                 var projectToRemove = await _database.Projects
-                    .SingleOrDefaultAsync(p => p.StudentId == studentId
+                    .FirstOrDefaultAsync(p => p.StudentId == studentId
                                                && p.LabWorkId == labWorkId);
                 if (projectToRemove == null)
                 {
@@ -181,7 +195,7 @@ namespace PlagiarismApp.Controllers
         [HttpGet]
         public async Task<ActionResult<List<Student>>> GetStudents()
         {
-            return await _database.Students.Include(s => s.Group)
+            return await _database.Students.Include(s => s.Group).AsNoTracking()
                                            .ToListAsync();
         }
 
@@ -259,7 +273,7 @@ namespace PlagiarismApp.Controllers
         [HttpGet]
         public async Task<ActionResult<List<LabWork>>> GetLabWorks()
         {
-            return await _database.LabWorks.ToListAsync();
+            return await _database.LabWorks.AsNoTracking().ToListAsync();
         }
 
         [HttpGet("{id:int}")]
