@@ -8,7 +8,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<ProjectService>();
 builder.Services.AddSingleton<StudentService>();
-builder.Services.AddSingleton<LabWorkService>();
+builder.Services.AddSingleton<ProjectTypeService>();
 builder.Services.AddSingleton<GroupService>();
 builder.Services.AddSingleton<HttpClient>();
 builder.Services.AddControllersWithViews()
@@ -16,9 +16,12 @@ builder.Services.AddControllersWithViews()
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
     );
 
-var connectionString = builder.Configuration.GetConnectionString("Connection");
-builder.Services.AddDbContext<IdentityDataContext>(options => options.UseSqlServer(connectionString));
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+var connectionString = 
+    builder.Configuration.GetConnectionString("Connection");
+builder.Services.AddDbContext<IdentityDataContext>
+    (options => options.UseSqlServer(connectionString));
+builder.Services.AddIdentity<IdentityUser, IdentityRole>
+    (options =>
 {
     options.Password.RequireDigit = false;
     options.Password.RequiredLength = 5;

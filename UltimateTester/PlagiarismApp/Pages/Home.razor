@@ -2,7 +2,7 @@
 
 <AuthorizeView>
     <Authorized>
-        <p role="status">Hello, @context.User.Identity.Name</p>
+        <p role="status">Hello, @context.User.Identity?.Name</p>
     </Authorized>
     <NotAuthorized>
         <p role="status">You're not authorized.</p>

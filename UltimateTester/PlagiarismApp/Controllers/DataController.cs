@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PlagiarismApp.Data.Database;
-using PlagiarismApp.Pages.Catalogs.Students;
 
 namespace PlagiarismApp.Controllers
 {
@@ -21,34 +19,27 @@ namespace PlagiarismApp.Controllers
         [HttpGet]
         public async Task<ActionResult<List<Project>>> GetProjects()
         {
-            return await _database.Projects.Include(p => p.LabWork)
+            return await _database.Projects.Include(p => p.ProjectType)
                                            .Include(p => p.Student)
                                            .ToListAsync();
         }
 
-        [HttpGet("{studentId:int}/{labWorkId:int}")]
-        public async Task<ActionResult<Project?>> GetProject([FromRoute] int studentId, 
-                                                             [FromRoute] int labWorkId)
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<Project?>> GetProject([FromRoute] int id)
         {
-            return await _database.Projects.Include(p => p.LabWork)
+            return await _database.Projects.Include(p => p.ProjectType)
                                            .Include(p => p.Student)
-                                           .FirstOrDefaultAsync(p => p.StudentId == studentId
-                                                                     && p.LabWorkId == labWorkId);
+                                           .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        [HttpPost("{studentId:int}/{labWorkId:int}")]
-        public async Task<ActionResult<Project>> PostProject([FromRoute] int studentId,
-                                                             [FromRoute] int labWorkId,
-                                                             [FromBody] Project project)
+        [HttpPost]
+        public async Task<ActionResult<Project>> PostProject([FromBody] Project project)
         {
             try
             {
-                var projectExists = _database.Projects.FirstOrDefaultAsync(p =>
-                    p.StudentId == studentId && p.LabWorkId == labWorkId);
-                if (project == null || projectExists != null)
+                if (!ModelState.IsValid || project == null)
                 {
-                    return NotFound($"Project cannot be null or" +
-                        $" such a project already exists");
+                    return NotFound($"Project cannot be null.");
                 }
                 _database.Entry(project).State = EntityState.Added;
                 await _database.SaveChangesAsync();
@@ -60,23 +51,17 @@ namespace PlagiarismApp.Controllers
             }
         }
 
-        [HttpPut("{studentId:int}/{labWorkId:int}")]
-        public async Task<ActionResult<Project>> PutProject([FromRoute] int studentId,
-                                                            [FromRoute] int labWorkId,
-                                                            [FromBody] Project project)
+        [HttpPut]
+        public async Task<ActionResult<Project>> PutProject([FromBody] Project project)
         {
             try
             {
                 if (ModelState.IsValid && project != null)
                 {
-                    var existingProject = _database.Projects.FirstOrDefaultAsync(p =>
-                        p.StudentId == studentId && p.LabWorkId == labWorkId).Result;
-                    if (existingProject == null)
-                    {
-                        return NotFound($"Project does not exist");
-                    }
-                    ControllerHelper.UpdateProjectValues(existingProject, project);
-                    return await ControllerHelper.UpdateAndSaveProject(_database, existingProject);
+                    _database.Attach(project);
+                    _database.Entry(project).State = EntityState.Modified;
+                    await _database.SaveChangesAsync();
+                    return project;
                 }
                 else
                 {
@@ -89,19 +74,15 @@ namespace PlagiarismApp.Controllers
             }
         }
 
-        [HttpDelete("{studentId:int}/{labWorkId:int}")]
-        public async Task<ActionResult<Project>> DeleteProject([FromRoute] int studentId,
-                                                               [FromRoute] int labWorkId)
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult<Project>> DeleteProject([FromRoute] int id)
         {
             try
             {
-                var projectToRemove = await _database.Projects
-                    .FirstOrDefaultAsync(p => p.StudentId == studentId
-                                               && p.LabWorkId == labWorkId);
+                var projectToRemove = await _database.Projects.FirstOrDefaultAsync(p => p.Id == id);
                 if (projectToRemove == null)
                 {
-                    return NotFound($"Project with LabWorkId = {studentId}," +
-                        $" StudentId = {labWorkId} not found.");
+                    return NotFound($"Project with Id = {id} not found.");
                 }
                 _database.Projects.Remove(projectToRemove);
                 await _database.SaveChangesAsync();
@@ -269,31 +250,31 @@ namespace PlagiarismApp.Controllers
         }
         #endregion
 
-        #region LabWorks
+        #region Project types
         [HttpGet]
-        public async Task<ActionResult<List<LabWork>>> GetLabWorks()
+        public async Task<ActionResult<List<ProjectType>>> GetProjectTypes()
         {
-            return await _database.LabWorks.AsNoTracking().ToListAsync();
+            return await _database.ProjectTypes.ToListAsync();
         }
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<LabWork?>> GetLabWork(int id)
+        public async Task<ActionResult<ProjectType?>> GetProjectType(int id)
         {
-            return await _database.LabWorks.FirstOrDefaultAsync(lw => lw.Id == id);
+            return await _database.ProjectTypes.FirstOrDefaultAsync(lw => lw.Id == id);
         }
 
         [HttpPost]
-        public async Task<ActionResult<LabWork>> PostLabWork(LabWork labWork)
+        public async Task<ActionResult<ProjectType>> PostProjectType(ProjectType projectType)
         {
             try
             {
-                if (labWork == null)
+                if (projectType == null)
                 {
-                    return NotFound($"Lab work cannot be null.");
+                    return NotFound($"Project type cannot be null.");
                 }
-                _database.LabWorks.Add(labWork);
+                _database.ProjectTypes.Add(projectType);
                 await _database.SaveChangesAsync();
-                return labWork;
+                return projectType;
             }
             catch (Exception)
             {
@@ -303,18 +284,18 @@ namespace PlagiarismApp.Controllers
         }
 
         [HttpPut]
-        public async Task<ActionResult<LabWork>> PutLabWork(LabWork labWork)
+        public async Task<ActionResult<ProjectType>> PutProjectType(ProjectType projectType)
         {
             try
             {
-                if (labWork == null)
+                if (projectType == null)
                 {
-                    return NotFound($"Lab work cannot be null.");
+                    return NotFound($"Project type cannot be null.");
                 }
-                _database.Attach(labWork);
-                _database.Entry(labWork).State = EntityState.Modified;
+                _database.Attach(projectType);
+                _database.Entry(projectType).State = EntityState.Modified;
                 await _database.SaveChangesAsync();
-                return labWork;
+                return projectType;
             }
             catch (Exception)
             {
@@ -324,17 +305,17 @@ namespace PlagiarismApp.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        public async Task<ActionResult<LabWork>> DeleteLabWork(int id)
+        public async Task<ActionResult<ProjectType>> DeleteProjectType(int id)
         {
             try
             {
-                var labWorkToRemove = await _database.LabWorks
+                var labWorkToRemove = await _database.ProjectTypes
                     .SingleOrDefaultAsync(lw => lw.Id == id);
                 if (labWorkToRemove == null)
                 {
-                    return NotFound($"Lab work with Id = {id} not found.");
+                    return NotFound($"Project type with Id = {id} not found.");
                 }
-                _database.LabWorks.Remove(labWorkToRemove);
+                _database.ProjectTypes.Remove(labWorkToRemove);
                 await _database.SaveChangesAsync();
                 return labWorkToRemove;
             }

@@ -1,4 +1,4 @@
-﻿@page "/lab_works/{id}"
+﻿@page "/project_types/{id}"
 @using Data.Database
 @using Microsoft.Extensions.Logging
 @using PlagiarismApp.Models
@@ -8,7 +8,7 @@
 
 @if (_model != null)
 {
-    <h3>Editing lab work: @_model.Name</h3>
+    <h3>Editing project type: @_model.Name</h3>
 
     <EditForm Model="@_model" OnValidSubmit="@UpdateLabWork">
         <DataAnnotationsValidator />
@@ -26,10 +26,10 @@
         <div class="form-floating" style="margin:10px">
             <InputText id="description" @bind-Value="_model.Description" />
         </div>
+
         <div class="form-floating" style="margin:10px">
             <button type="submit" class="btn btn-primary">Update</button>
         </div>
-
     </EditForm>
 }
 else 
@@ -38,9 +38,9 @@ else
 }
 
 @code {
-    private LabWorkModel? _model;
+    private ProjectTypeModel? _model;
 
-    private LabWork? labWork;
+    private ProjectType? projectType;
 
     [Parameter]
     public string? Id { get; set; }
@@ -53,18 +53,18 @@ else
 
     private async Task InitializeLabWorks()
     {
-        labWork = await HttpClient.GetFromJsonAsync<LabWork>
-            (NavigationManager.BaseUri + "api/data/getlabwork/" + Id);
+        projectType = await HttpClient.GetFromJsonAsync<ProjectType>
+            (NavigationManager.BaseUri + "api/data/getprojecttype/" + Id);
     }
 
     private void InitializeModel()
     {
-        if (labWork != null)
+        if (projectType != null)
         {
-            _model = new LabWorkModel()
+            _model = new ProjectTypeModel()
                 {
-                    Name = labWork.Name,
-                    Description = labWork.Description
+                    Name = projectType.Name,
+                    Description = projectType.Description
                 };
         }
     }
@@ -72,14 +72,14 @@ else
     private async Task UpdateLabWork()
     {
         Edit();
-        var response = await HttpClient.PutAsJsonAsync(NavigationManager.BaseUri +
-                                                       "api/data/putlabwork", labWork);
-        NavigationManager.NavigateTo("/lab_works");
+        var response = await HttpClient.PutAsJsonAsync(
+            NavigationManager.BaseUri + "api/data/putprojecttype", projectType);
+        NavigationManager.NavigateTo("/project_types");
     }
 
     private void Edit()
     {
-        labWork.Name = _model.Name;
-        labWork.Description = _model.Description;
+        projectType.Name = _model.Name;
+        projectType.Description = _model.Description;
     }
 }

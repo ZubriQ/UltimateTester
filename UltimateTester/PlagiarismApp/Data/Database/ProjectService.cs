@@ -18,12 +18,12 @@ namespace PlagiarismApp.Data.Database
         public Task<Project> GetItemAsync(int studentId, int labId)
         {
             return Task.FromResult(database.Projects.First(p => p.StudentId == studentId &&
-                                                                p.LabWorkId == labId));
+                                                                p.ProjectTypeId == labId));
         }
 
         public override Task<Project[]> GetItemsAsync()
         {
-            Project[] projects = database.Projects.Include(p => p.LabWork)
+            Project[] projects = database.Projects.Include(p => p.ProjectType)
                                                   .Include(p => p.Student)
                                                   .ToArray();
             return Task.FromResult(projects);
@@ -31,7 +31,8 @@ namespace PlagiarismApp.Data.Database
 
         public async void GetItemsAsync(NavigationManager navigationManager)
         {
-            Projects = await client.GetFromJsonAsync<List<Project>>(navigationManager.BaseUri + "api/data/getprojects");
+            Projects = await client.GetFromJsonAsync<List<Project>>
+                (navigationManager.BaseUri + "api/data/getprojects");
         }
     }
 }

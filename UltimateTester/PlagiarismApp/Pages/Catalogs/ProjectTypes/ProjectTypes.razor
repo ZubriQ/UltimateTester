@@ -1,0 +1,79 @@
+﻿@page "/project_types"
+@using Data.Database
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@if (projectTypes != null)
+{
+    <h3>Project types:</h3>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var projectType in projectTypes)
+            {
+                <tr>
+                    <td>@projectType.Name</td>
+                    <td>@projectType.Description</td>
+                    <td>
+                        <a href="@GetHrefForEditPage(projectType)">Edit</a>
+                    </td>
+                    <td>
+                        <a href="project_types/" @onclick="(() => DeleteElement(projectType.Id))">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button class="btn btn-primary" @onclick="NavigateToAddProjectTypePage">
+        Add
+    </button>
+}
+else
+{
+    <OnDataLoading />
+}
+
+@code {
+    private List<ProjectType>? projectTypes { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateTableData();
+    }
+
+    private async Task UpdateTableData()
+    {
+        projectTypes = await HttpClient.GetFromJsonAsync<List<ProjectType>>
+            (NavigationManager.BaseUri + "api/data/getprojecttypes");
+    }
+
+    private async Task DeleteElement(int labWorkId)
+    {
+        var response = await HttpClient.DeleteAsync(
+            NavigationManager.BaseUri + "api/data/deleteprojecttype/" + labWorkId);
+        if (response.ReasonPhrase == "OK")
+        {
+            await UpdateTableData();
+        }
+    }
+
+    private string GetHrefForEditPage(ProjectType projectType)
+    {
+        return "project_types/" + projectType.Id;
+    }
+
+    private void NavigateToAddProjectTypePage()
+    {
+        NavigationManager.NavigateTo("project_types/add_project_type");
+    }
+}

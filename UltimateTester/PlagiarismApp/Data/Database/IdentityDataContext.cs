@@ -5,28 +5,26 @@ namespace PlagiarismApp.Data.Database
 {
     public partial class IdentityDataContext : IdentityDbContext
     {
-        WebApplicationBuilder Builder { get; }
-
         public IdentityDataContext(DbContextOptions options) : base(options)
         {
-            Builder = WebApplication.CreateBuilder();
         }
 
         public IdentityDataContext() : base()
         {
-            Builder = WebApplication.CreateBuilder();
         }
-
+        
         public virtual DbSet<Group> Groups { get; set; } = null!;
-        public virtual DbSet<LabWork> LabWorks { get; set; } = null!;
         public virtual DbSet<Project> Projects { get; set; } = null!;
+        public virtual DbSet<ProjectType> ProjectTypes { get; set; } = null!;
         public virtual DbSet<Student> Students { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            var builder = WebApplication.CreateBuilder();
             if (!optionsBuilder.IsConfigured)
             {
-                string connectionString = Builder.Configuration.GetConnectionString("Connection");
+                string connectionString = 
+                    builder.Configuration.GetConnectionString("Connection");
                 optionsBuilder.UseSqlServer(connectionString);
             }
             base.OnConfiguring(optionsBuilder);
@@ -43,11 +41,55 @@ namespace PlagiarismApp.Data.Database
                 entity.Property(e => e.Name)
                     .HasMaxLength(50)
                     .HasColumnName("name");
+
+                entity.Property(e => e.Year).HasColumnName("year");
             });
 
-            modelBuilder.Entity<LabWork>(entity =>
+            modelBuilder.Entity<Project>(entity =>
             {
-                entity.ToTable("lab_work");
+                entity.ToTable("project");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.DateOfPassing)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date_of_passing");
+
+                entity.Property(e => e.GitUrl)
+                    .HasMaxLength(100)
+                    .HasColumnName("git_url");
+
+                entity.Property(e => e.Name)
+                    .HasMaxLength(50)
+                    .HasColumnName("name");
+
+                entity.Property(e => e.OriginalityPercentage)
+                    .HasColumnName("originality_percentage");
+
+                entity.Property(e => e.PathOnDisc)
+                    .HasMaxLength(260)
+                    .HasColumnName("path_on_disc");
+
+                entity.Property(e => e.ProjectTypeId).HasColumnName("project_type_id");
+
+                entity.Property(e => e.StudentId).HasColumnName("student_id");
+
+                entity.HasOne(d => d.ProjectType)
+                    .WithMany(p => p.Projects)
+                    .HasForeignKey(d => d.ProjectTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_project_project_type");
+
+                entity.HasOne(d => d.Student)
+                    .WithMany(p => p.Projects)
+                    .HasForeignKey(d => d.StudentId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_project_student1");
+            });
+
+            modelBuilder.Entity<ProjectType>(entity =>
+            {
+                entity.ToTable("project_type");
 
                 entity.Property(e => e.Id).HasColumnName("id");
 
@@ -58,41 +100,6 @@ namespace PlagiarismApp.Data.Database
                 entity.Property(e => e.Name)
                     .HasMaxLength(50)
                     .HasColumnName("name");
-            });
-
-            modelBuilder.Entity<Project>(entity =>
-            {
-                entity.HasKey(e => new { e.StudentId, e.LabWorkId });
-
-                entity.ToTable("project");
-
-                entity.Property(e => e.StudentId).HasColumnName("student_id");
-
-                entity.Property(e => e.LabWorkId).HasColumnName("lab_work_id");
-
-                entity.Property(e => e.GitUrl)
-                    .HasMaxLength(100)
-                    .HasColumnName("git_url");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(50)
-                    .HasColumnName("name");
-
-                entity.Property(e => e.PathOnDisc)
-                    .HasMaxLength(260)
-                    .HasColumnName("path_on_disc");
-
-                entity.HasOne(d => d.LabWork)
-                    .WithMany(p => p.Projects)
-                    .HasForeignKey(d => d.LabWorkId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_project_lab_work");
-
-                entity.HasOne(d => d.Student)
-                    .WithMany(p => p.Projects)
-                    .HasForeignKey(d => d.StudentId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_project_student");
             });
 
             modelBuilder.Entity<Student>(entity =>

@@ -14,11 +14,15 @@ namespace PlagiarismApp.Models
         [MaxLength(260)] // TODO: not required yet
         public string? PathOnDisc { get; set; }
 
+        public DateTime? DateOfPassing { get; set; }
+
+        public double? OriginalityPercentage { get; set; }
+
         [Required]
         public int SelectedStudentId { get; set; }
 
         [Required]
-        public int SelectedLabWorkId { get; set; }
+        public int SelectedProjectTypeId { get; set; }
 
         public ProjectModel()
         {

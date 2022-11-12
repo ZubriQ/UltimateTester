@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace PlagiarismApp.Data.Database
 {
-    public partial class LabWork
+    public partial class ProjectType
     {
-        public LabWork()
+        public ProjectType()
         {
             Projects = new HashSet<Project>();
         }

@@ -74,8 +74,8 @@ else
 
     private async Task DeleteElement(int studentId)
     {
-        var response = await HttpClient.DeleteAsync(NavigationManager.BaseUri +
-            "api/data/deletestudent/" + studentId);
+        var response = await HttpClient.DeleteAsync(
+            NavigationManager.BaseUri + "api/data/deletestudent/" + studentId);
         if (response.ReasonPhrase == "OK")
         {
             await UpdateTableData();

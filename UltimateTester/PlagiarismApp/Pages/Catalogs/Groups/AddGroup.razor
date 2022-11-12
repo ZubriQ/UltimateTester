@@ -19,6 +19,13 @@
     <div class="form-floating" style="margin:10px">
         <InputText id="name" @bind-Value="_model.Name" />
     </div>
+    <div>
+        <label>Year:</label>
+    </div>
+    <div class="form-floating" style="margin:10px">
+        <InputNumber id="year" @bind-Value="_model.Year" />
+    </div>
+
     <div class="form-floating" style="margin:10px">
         <button type="submit" class="btn btn-primary">Insert</button>
         <button type="reset" class="btn btn-primary" @onclick="Cancel">Cancel</button>
@@ -29,11 +36,17 @@
 @code {
     private GroupModel _model = new();
 
+    protected override void OnInitialized()
+    {
+        _model.Year = DateTime.Now.Year;
+        base.OnInitialized();
+    }
+
     private async Task CreateAndSaveGroup()
     {
         Logger.LogInformation("CreateAndSaveGroup called");
 
-        Group newGroup = new Group() { Name = _model.Name };
+        Group newGroup = new Group() { Name = _model.Name, Year = _model.Year };
         await PostGroup(newGroup);
         NavigationManager.NavigateTo("/groups");
     }

@@ -6,7 +6,7 @@
 @inject NavigationManager NavigationManager
 @attribute [Authorize]
 
-@if (labWorks != null && students != null)
+@if (projectTypes != null && students != null)
 {
     <h3>Adding a new project:</h3>
 
@@ -37,7 +37,7 @@
         </div>
         <div class="form-floating" style="margin:10px">
             <select @bind="_model.SelectedStudentId">
-                <option value=""></option>
+                <option value="" disabled selected>Choose a student</option>
                 @foreach (var student in students)
                 {
                     <option value="@student.Id">
@@ -47,15 +47,15 @@
             </select>
         </div>
         <div>
-            <label>Lab work:</label>
+            <label>Project type:</label>
         </div>
         <div class="form-floating" style="margin:10px">
-            <select @bind="_model.SelectedLabWorkId">
-                <option value=""></option>
-                @foreach (var labWork in labWorks)
+            <select @bind="_model.SelectedProjectTypeId">
+                <option value="" disabled selected>Choose a project type</option>
+                @foreach (var projectType in projectTypes)
                 {
-                    <option value="@labWork.Id">
-                        @(labWork.Name + " " + labWork.Description)
+                    <option value="@projectType.Id">
+                        @(projectType.Name + " " + projectType.Description)
                     </option>
                 }
             </select>
@@ -80,20 +80,20 @@ else
 @code {
     private ProjectModel _model = new();
 
-    private LabWork[]? labWorks;
+    private ProjectType[]? projectTypes;
 
     private Student[]? students;
 
     protected override async Task OnInitializedAsync()
     {
-        await InitializeLabWorks();
+        await InitializeProjectTypes();
         await InitializeStudents();
     }
 
-    private async Task InitializeLabWorks()
+    private async Task InitializeProjectTypes()
     {
-        labWorks = await HttpClient.GetFromJsonAsync<LabWork[]>
-            (NavigationManager.BaseUri + "api/data/getlabworks/");
+        projectTypes = await HttpClient.GetFromJsonAsync<ProjectType[]>
+            (NavigationManager.BaseUri + "api/data/getprojecttypes/");
     }
 
     private async Task InitializeStudents()
@@ -107,7 +107,7 @@ else
         Project project = CreateProject();
         var response = await HttpClient.PostAsJsonAsync<Project>(
             NavigationManager.BaseUri + "api/data/postproject/" +
-            project.StudentId + '/' + project.LabWorkId, project);
+            project.StudentId + '/' + project.ProjectTypeId, project);
         NavigationManager.NavigateTo("/projects");
     }
 
@@ -119,7 +119,7 @@ else
                 GitUrl = _model.GitUrl,
                 PathOnDisc = _model.PathOnDisc,
                 StudentId = _model.SelectedStudentId,
-                LabWorkId = _model.SelectedLabWorkId
+                ProjectTypeId = _model.SelectedProjectTypeId
             };
         return newProject;
     }

@@ -1,4 +1,4 @@
-﻿@page "/lab_works/add_lab_work"
+﻿@page "/project_types/add_project_type"
 @using Data.Database
 @using Microsoft.Extensions.Logging
 @using PlagiarismApp.Models
@@ -6,9 +6,9 @@
 @inject NavigationManager NavigationManager
 @attribute [Authorize]
 
-<h3>Adding a new lab work:</h3>
+<h3>Adding a new project type:</h3>
 
-<EditForm Model="@_model" OnValidSubmit="@CreateAndSaveLabWork">
+<EditForm Model="@_model" OnValidSubmit="@CreateAndSave">
     <DataAnnotationsValidator />
     <ValidationSummary />
 
@@ -24,36 +24,36 @@
     <div class="form-floating" style="margin:10px">
         <InputText id="description" @bind-Value="_model.Description" />
     </div>
+
     <div class="form-floating" style="margin:10px">
         <button type="submit" class="btn btn-primary">Insert</button>
         <button type="reset" class="btn btn-primary" @onclick="Cancel">Cancel</button>
     </div>
-
 </EditForm>
 
 @code {
-    private LabWorkModel _model = new();
+    private ProjectTypeModel _model = new();
 
-    private async Task CreateAndSaveLabWork()
+    private async Task CreateAndSave()
     {
-        LabWork newLabWork = new LabWork()
+        ProjectType newProjectType = new ProjectType()
             {
                 Name = _model.Name,
                 Description = _model.Description
             };
-        await PostLabWork(newLabWork);
-        NavigationManager.NavigateTo("/lab_works");
+        await Post(newProjectType);
+        NavigationManager.NavigateTo("/project_types");
     }
 
-    private async Task PostLabWork(LabWork labWork)
+    private async Task Post(ProjectType projectType)
     {
         var response = await HttpClient.PostAsJsonAsync(
-            NavigationManager.BaseUri + "api/data/postlabwork", labWork);
+            NavigationManager.BaseUri + "api/data/postprojecttype", projectType);
     }
 
-    private LabWork CreateLabWork()
+    private ProjectType CreateLabWork()
     {
-        return new LabWork()
+        return new ProjectType()
             {
                 Name = _model.Name,
                 Description = _model.Description
@@ -62,6 +62,6 @@
 
     private void Cancel()
     {
-        NavigationManager.NavigateTo("/lab_works");
+        NavigationManager.NavigateTo("/project_types");
     }
 }

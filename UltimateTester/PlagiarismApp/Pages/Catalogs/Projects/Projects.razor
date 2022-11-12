@@ -14,7 +14,9 @@
                 <th>Project name</th>
                 <th>Full name</th>
                 <th>Lab</th>
-                <th>Lab description</th>
+                <th>Description</th>
+                <th>Originality pct.</th>
+                <th>Date</th>
                 <th>Git URL</th>
                 <th>Disc path</th>
                 <th>Edit</th>
@@ -27,8 +29,10 @@
                 <tr>
                     <td>@project.Name</td>
                     <td>@project.Student.FullName</td>
-                    <td>@project.LabWork.Name</td>
-                    <td>@project.LabWork.Description</td>
+                    <td>@project.ProjectType.Name</td>
+                    <td>@project.ProjectType.Description</td>
+                    <td>@project.OriginalityPercentage</td>
+                    <td>@project.DateOfPassing</td>
                     @if (!string.IsNullOrEmpty(@project.GitUrl))
                     {
                         <td>@project.GitUrl</td>
@@ -49,8 +53,7 @@
                         <a href="@GetHrefForEditPage(project)">Edit</a>
                     </td>
                     <td>
-                        <a href="projects/" @onclick="(() => DeleteElement(
-                            project.StudentId, project.LabWorkId))">
+                        <a href="projects/" @onclick="(() => DeleteElement(project.Id))">
                             Delete
                         </a>
                     </td>
@@ -82,10 +85,10 @@ else
             (NavigationManager.BaseUri + "api/data/getprojects");
     }
 
-    private async Task DeleteElement(int studentId, int labWorkId)
+    private async Task DeleteElement(int id)
     {
         var response = await HttpClient.DeleteAsync(NavigationManager.BaseUri +
-            "api/data/deleteproject/" + studentId + '/' + labWorkId);
+            "api/data/deleteproject/" + id);
         if (response.ReasonPhrase == "OK")
         {
             await GetProjectsData();
@@ -94,7 +97,7 @@ else
 
     private string GetHrefForEditPage(Project project)
     {
-        return "projects/" + project.StudentId + '/' + project.LabWorkId;
+        return "projects/" + project.Id;
     }
 
     private void NavigateToAddProjectPage()

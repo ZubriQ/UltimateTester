@@ -21,8 +21,16 @@
         <div class="form-floating" style="margin:10px">
             <InputText id="name" @bind-Value="_model.Name" />
         </div>
+        <div>
+            <label>Year:</label>
+        </div>
+        <div class="form-floating" style="margin:10px">
+            <InputNumber id="year" @bind-Value="_model.Year" />
+        </div>
+
         <div class="form-floating" style="margin:10px">
             <button type="submit" class="btn btn-primary">Update</button>
+            <button type="reset" class="btn btn-primary" @onclick="Cancel">Cancel</button>
         </div>
     </EditForm>
 }
@@ -32,7 +40,7 @@ else
 }
 
 @code {
-    private GroupModel? _model;
+    private GroupModel _model = new();
 
     private Group? group;
 
@@ -54,7 +62,7 @@ else
     {
         if (group != null)
         {
-            _model = new GroupModel() { Name = group.Name };
+            _model = new GroupModel() { Name = group.Name, Year = group.Year };
         }
     }
 
@@ -71,5 +79,11 @@ else
     private void Edit()
     {
         group.Name = _model.Name;
+        group.Year = _model.Year;
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/groups");
     }
 }
