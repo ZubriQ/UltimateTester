@@ -1,43 +1,60 @@
 ﻿@page "/projects/add_project"
-@using Data.Database
+@using System
+@using System.IO
+@using CodeParser.Plagiarism
+@using Microsoft.AspNetCore.Hosting
 @using Microsoft.Extensions.Logging
+@using Data.Database
+@using NUnrar.Archive
 @using PlagiarismApp.Models
+@using System.Security.AccessControl
+@using System.IO.Compression
+@using System.Text.RegularExpressions
 @inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
+@inject ILogger<AddProject> Logger
+@inject IWebHostEnvironment Environment
 @attribute [Authorize]
 
 @if (projectTypes != null && students != null)
 {
-    <h3>Adding a new project:</h3>
+    <h3>Adding a new project</h3>
 
     <EditForm Model="@_model" OnValidSubmit="@PostProject">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
-        <div>
+@*      <div>
             <label>Name:</label>
         </div>
         <div class="form-floating" style="margin:10px">
-            <InputText id="name" @bind-Value="_model.Name" />
-        </div>
-        <div>
+            <InputText id="projectName" @bind-Value="_model.Name" />
+        </div>*@
+
+@*        <div>
             <label>Git URL:</label>
         </div>
         <div class="form-floating" style="margin:10px">
             <InputText id="gitUrl" @bind-Value="_model.GitUrl" />
-        </div>
-        <div>
+        </div>*@
+
+@*      <div>
             <label>Path on disc:</label>
         </div>
         <div class="form-floating" style="margin:10px">
             <InputText id="pathOnDisc" @bind-Value="_model.PathOnDisc" />
-        </div>
+        </div>*@
+
+        @* Select Student, Project type *@
         <div>
             <label>Student:</label>
         </div>
         <div class="form-floating" style="margin:10px">
+
             <select @bind="_model.SelectedStudentId">
-                <option value="" disabled selected>Choose a student</option>
+                <option value="" disabled selected> 
+                    Choose a student 
+                </option>
                 @foreach (var student in students)
                 {
                     <option value="@student.Id">
@@ -45,11 +62,14 @@
                     </option>
                 }
             </select>
+
         </div>
+
         <div>
             <label>Project type:</label>
         </div>
         <div class="form-floating" style="margin:10px">
+
             <select @bind="_model.SelectedProjectTypeId">
                 <option value="" disabled selected>Choose a project type</option>
                 @foreach (var projectType in projectTypes)
@@ -59,12 +79,64 @@
                     </option>
                 }
             </select>
+
         </div>
 
+
+        @* Project Upload *@
+        <div>
+            <h3>Upload a .zip file and check a project's originality</h3>
+
+            <p>
+                <label>
+                    Max file size:
+                    <input type="number" @bind="maxFileSize" />
+                </label>
+            </p>
+
+@*          <p>
+                <label>
+                    Max allowed files:
+                    <input type="number" @bind="maxAllowedFiles" />
+                </label>
+            </p>*@
+
+            <p>
+                <label>
+                    Upload @maxAllowedFiles file of up to @maxFileSize bytes:
+                    <InputFile OnChange="@UploadFile" multiple />
+                </label>
+            </p>
+
+            @if (isLoading)
+            {
+                <p>Progress: @string.Format("{0:P0}", progressPercent)</p>
+            }
+            else
+            {
+                <ul>
+                    @foreach (var file in loadedFiles)
+                    {
+                        <li>
+                            <ul>
+                                <li>Name: @file.Name</li>
+                                <li>Last modified: @file.LastModified.ToString()</li>
+                                <li>Size (bytes): @file.Size</li>
+                                <li>Content type: @file.ContentType</li>
+                            </ul>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+
+        @* Buttons *@
         <div class="form-floating" style="margin:10px">
             <button type="submit" class="btn btn-primary">
                 Insert
             </button>
+
             <button type="reset" class="btn btn-primary" @onclick="Cancel">
                 Cancel
             </button>
@@ -77,12 +149,27 @@ else
     <OnDataLoading />
 }
 
+
 @code {
     private ProjectModel _model = new();
-
     private ProjectType[]? projectTypes;
-
     private Student[]? students;
+    private Project newProject = null;
+
+    private List<IBrowserFile> loadedFiles = new();
+    private long maxFileSize = 1024 * 1000;
+    private int maxAllowedFiles = 1;
+    private bool isLoading = true;
+    private decimal progressPercent = 0;
+
+    private Regex csFilesRegex = new Regex(@"^.+\.cs$");
+    private string directoryPath;
+    private string relativePath;
+
+    private string uploadedProjectCode = "";
+
+    private PlagiarismChecker _checker = new();
+    private PlagiarismFinder _checker2 = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -102,30 +189,216 @@ else
             (NavigationManager.BaseUri + "api/data/getstudents/");
     }
 
-    private async Task PostProject()
+    private void Cancel()
     {
-        Project project = CreateProject();
-        var response = await HttpClient.PostAsJsonAsync<Project>(
-            NavigationManager.BaseUri + "api/data/postproject/" +
-            project.StudentId + '/' + project.ProjectTypeId, project);
         NavigationManager.NavigateTo("/projects");
     }
 
-    private Project CreateProject()
+    #region Upload a file
+    private async Task UploadFile(InputFileChangeEventArgs e)
+    {
+        newProject = CreateProject(e.File.Name);
+        InitializePaths();
+
+        UpdateFolders();
+
+        // Upload the file.
+        foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            try
+            {
+                await UploadFile(file);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("File: {Filename} Error: {Error}",
+                    file.Name, ex.Message);
+            }
+        }
+        isLoading = false;
+    }
+
+    private Project CreateProject(string projectName)
     {
         Project newProject = new Project()
             {
-                Name = _model.Name,
-                GitUrl = _model.GitUrl,
-                PathOnDisc = _model.PathOnDisc,
+                Name = projectName,
+                DateOfPassing = DateTime.Now,
                 StudentId = _model.SelectedStudentId,
                 ProjectTypeId = _model.SelectedProjectTypeId
             };
         return newProject;
     }
 
-    private void Cancel()
+    private void InitializePaths()
     {
-        NavigationManager.NavigateTo("/projects");
+        var student = students.Where(s => s.Id == newProject.StudentId)
+                              .SingleOrDefault();
+        var projectType = projectTypes.Where(p => p.Id == newProject.ProjectTypeId)
+                                      .SingleOrDefault();
+
+        relativePath = Path.Combine("UploadedProjects", 
+            student.Group.Name, student.FullName, projectType.Name);
+        directoryPath = Path.Combine(Environment.ContentRootPath, relativePath);
+
+        newProject.PathOnDisc = Path.Combine(directoryPath, newProject.Name);
     }
+
+    // Create a new folder or clear old files.
+    private void UpdateFolders()
+    {
+        if (!Directory.Exists(directoryPath))
+        {
+            Directory.CreateDirectory(directoryPath);
+            MakeFolderWritable(directoryPath);
+        }
+        else 
+        {
+            DirectoryInfo directory = new DirectoryInfo(directoryPath);
+
+            foreach (FileInfo file in directory.GetFiles())
+            {
+                file.Delete();
+            }
+        }
+    }
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        await using FileStream writeStream = new(newProject.PathOnDisc, FileMode.Create);
+        using var readStream = file.OpenReadStream(maxFileSize);
+        var bytesRead = 0;
+        var totalRead = 0;
+        var buffer = new byte[1024 * 10];
+
+        while ((bytesRead = await readStream.ReadAsync(buffer)) != 0)
+        {
+            totalRead += bytesRead;
+            await writeStream.WriteAsync(buffer, 0, bytesRead);
+            progressPercent = Decimal.Divide(totalRead, file.Size);
+            StateHasChanged();
+        }
+        loadedFiles.Add(file);
+    }
+
+    private void MakeFolderWritable(string folder)
+    {
+        if (IsFolderReadOnly(folder))
+        {
+            System.IO.DirectoryInfo oDir = new System.IO.DirectoryInfo(folder);
+            oDir.Attributes = oDir.Attributes & ~System.IO.FileAttributes.ReadOnly;
+        }
+    }
+
+    private bool IsFolderReadOnly(string folder)
+    {
+        System.IO.DirectoryInfo oDir = new System.IO.DirectoryInfo(folder);
+        return ((oDir.Attributes & System.IO.FileAttributes.ReadOnly) > 0);
+    }
+    #endregion
+
+    #region Read from zip, Write to a file, Check originality & Post
+    private async Task PostProject()
+    {
+        if (loadedFiles.Count > 0)
+        {
+            ReadFromFile();
+            GetFilesAndEstimateOriginality();
+            var response = await HttpClient.PostAsJsonAsync(
+                NavigationManager.BaseUri + "api/data/postproject/", newProject);
+            NavigationManager.NavigateTo("/projects");
+        }
+    }
+
+    private void ReadFromFile()
+    {
+        // Get ZIP file.
+        DirectoryInfo zipDirectory = new DirectoryInfo(directoryPath);
+        FileInfo[] files = zipDirectory.GetFiles("*.zip");
+
+        // Do for 1 uploaded file.
+        using (ZipArchive zip = ZipFile.Open(files[0].FullName, ZipArchiveMode.Read))
+        {
+            ReadEntriesAndWriteToFile(zip);
+        }
+    }
+
+    private void GetFilesAndEstimateOriginality()
+    {
+        var uploadedProjectsPath = Path.Combine(Environment.ContentRootPath, "UploadedProjects");
+        DirectoryInfo codesDirectory = new DirectoryInfo(uploadedProjectsPath);
+
+        // Compare originality with other projects but itself.
+        FileInfo[] codeFiles = GetCodeFiles(codesDirectory);
+
+        if (codeFiles.Length > 0)
+        {
+            Logger.LogTrace($"{codeFiles.Length} projects found.\nGetting originality...");
+            EstimateCodeOriginality(codeFiles);
+        }
+        else 
+        {
+            newProject.OriginalityPercentage = 1;
+        }
+    }
+
+    private void EstimateCodeOriginality(FileInfo[] txtFiles)
+    {
+        Dictionary<int, string> codes = new();
+        for (int i = 0; i < txtFiles.Length; i++)
+        {
+            codes.Add(i, File.ReadAllText(txtFiles[i].FullName));
+        }
+        var result = _checker.FindMostMatchingCode(uploadedProjectCode, codes);
+        newProject.OriginalityPercentage = Math.Round(1 - result.Item2, 2);
+    }
+
+    private FileInfo[] GetCodeFiles(DirectoryInfo directory)
+    {
+        return directory.GetFiles("Code.txt", SearchOption.AllDirectories)
+                        .Where(f => f.DirectoryName != directoryPath)
+                        .ToArray();
+    }
+
+    private void ReadEntriesAndWriteToFile(ZipArchive zip)
+    {
+        List<string> allSolutionCode = new();
+        ReadZipFileEntries(allSolutionCode, zip);
+
+        string path = Path.Combine(relativePath, "Code.txt");
+        File.WriteAllLinesAsync(path, allSolutionCode);
+
+        SaveCodeForChecking(allSolutionCode);
+    }
+
+    private void ReadZipFileEntries(List<string> allSolutionCode, ZipArchive zip)
+    {
+        foreach (ZipArchiveEntry entry in zip.Entries)
+        {
+            if (csFilesRegex.IsMatch(entry.Name))
+            {
+                allSolutionCode.Add(ReadZipEntry(entry));
+            }
+        }
+    }
+
+    private string ReadZipEntry(ZipArchiveEntry entry)
+    {
+        using (var stream = entry.Open())
+        {
+            using (var reader = new StreamReader(stream))
+            {
+                return reader.ReadToEnd();
+            }
+        }
+    }
+
+    private void SaveCodeForChecking(List<string> obtainedCode)
+    {
+        for (int i = 0; i < obtainedCode.Count; i++)
+        {
+            uploadedProjectCode += obtainedCode[i];
+        }
+    }
+    #endregion
 }

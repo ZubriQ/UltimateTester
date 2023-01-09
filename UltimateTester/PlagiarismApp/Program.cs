@@ -11,6 +11,7 @@ builder.Services.AddSingleton<StudentService>();
 builder.Services.AddSingleton<ProjectTypeService>();
 builder.Services.AddSingleton<GroupService>();
 builder.Services.AddSingleton<HttpClient>();
+builder.Services.AddHttpClient();
 builder.Services.AddControllersWithViews()
     .AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PlagiarismApp.Data.Database;
+using PlagiarismApp.Pages.Menu;
+using System.Net;
 
 namespace PlagiarismApp.Controllers
 {

@@ -1,0 +1,329 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace Lab5_Regex
+{
+    internal class FileManager
+    {
+        private StreamReader _stream;
+
+        public string[] Strings { get; private set; }
+
+        public FileManager(StreamReader stream)
+        {
+            _stream = stream;
+        }
+
+        public FileManager() { }
+
+        public void SetStream(StreamReader stream)
+        {
+            if (_stream != null)
+                _stream.Close();
+            _stream = stream;
+        }
+
+        public void ReadFile()
+        {
+            Message("Reading the file...");
+            List<string> strings = new List<string>();
+
+            int i = 0;
+            while (!_stream.EndOfStream)
+            {
+                strings.Add(_stream.ReadLine());
+                Console.WriteLine(strings[i]);
+                i++;
+            }
+
+            Strings = strings.ToArray();
+            Message("The reading has ended.");
+        }
+
+        public void GetURLs(string pattern, string saveAs)
+        {
+            Message($"Checking the strings (Pattern: {pattern}) ...");
+
+            Regex regex = new Regex(pattern);
+            List<string> urls = new List<string>();
+            OutputURLs(regex, urls);
+            SaveURLs(urls, saveAs);
+
+            Message("The checking has ended.");
+        }
+
+        private void OutputURLs(Regex regex, List<string> urls)
+        {
+            int strLength = 0;
+            string record;
+            for (int i = 0; i < Strings.Length; i++)
+                if (regex.IsMatch(Strings[i]))
+                {
+                    Match match = regex.Match(Strings[i]);
+
+                    while (match.Success)
+                    {
+                        record = $"Index : {strLength + match.Index};\t Site : {match.Value}";
+                        urls.Add(record);
+                        Console.WriteLine(record);
+
+                        match = match.NextMatch();
+                    }
+                    strLength += Strings[i].Length;
+                }
+        }
+
+        private void SaveURLs(List<string> urls, string saveAs)
+        {
+            StreamWriter sw = new StreamWriter(new FileStream(
+    Path.Combine(Environment.CurrentDirectory, saveAs),
+    FileMode.Create));
+            for (int i = 0; i < urls.Count; i++)
+            {
+                sw.WriteLine(urls[i]);
+            }
+            sw.Close();
+        }
+
+        // Additional task 1
+        public void GetShopPriceList(string pattern)
+        {
+            Message($"Checking the strings (Pattern: {pattern}) ...");
+            Regex regex = new Regex(pattern);
+
+            for (int i = 0; i < Strings.Length; i++)
+                if (regex.IsMatch(Strings[i]))
+                {
+                    // Find and output all matches in a string.
+                    PrintShopGoods(regex, Strings[i]);
+                }
+            Message("The checking has ended.");
+        }
+
+        private void PrintShopGoods(Regex regex, string s)
+        {
+            Match match = regex.Match(s);
+            double weight, price;
+            while (match.Success)
+            {
+                Double.TryParse(match.Groups["price"].ToString(), out price);
+                Double.TryParse(match.Groups["weight"].ToString(), out weight);
+
+                Console.WriteLine($"{match.Groups["name"]} - " +
+                    $"{Math.Round(price / weight, 2)} руб/кг");
+                // To the next match.
+                match = match.NextMatch();
+            }
+        }
+
+        // Task 4
+        public void GetPersonalData(string pattern)
+        {
+            Message($"Checking the strings (Pattern: {pattern}) ...");
+            Regex regex = new Regex(pattern);
+            int matchCount = 0;
+
+            for (int i = 0; i < Strings.Length; i++)
+                if (regex.IsMatch(Strings[i]))
+                {
+                    // Find and output all matches in a string.
+                    OutputPersonInfo(regex, Strings[i], ref matchCount);
+                }
+            Message("The checking has ended.");
+            Message($"Match Count = {matchCount}");
+        }
+
+        private void OutputPersonInfo(Regex regex, string s, ref int count)
+        {
+            Match match = regex.Match(s);
+            while (match.Success)
+            {
+                count++;
+                Console.WriteLine($"Second name = {match.Groups["second_name"]}," +
+                    $" Age = {match.Groups["age"]}, City = {match.Groups["city"]}.");
+                // To the next match.
+                match = match.NextMatch();
+            }
+        }
+
+        /// <summary>
+        /// Outputs every matched substring of a string.
+        /// </summary>
+        /// <param name="pattern">Regex's pattern.</param>
+        public void MatchValues(string pattern)
+        {
+            Message($"Checking the strings (Pattern: {pattern}) ...");
+            Regex regex = new Regex(pattern);
+            int matchCount = 0;
+
+            for (int i = 0; i < Strings.Length; i++)
+                if (regex.IsMatch(Strings[i]))
+                {
+                    Message($"Matches in a string {i}: ");
+                    // Find and output all matches in a string.
+                    Match(regex, Strings[i], ref matchCount);
+                }
+            Message("The checking has ended.");
+            Message($"Match Count = {matchCount}");
+        }
+
+        private void Match(Regex regex, string s, ref int count)
+        {
+            Match match = regex.Match(s);
+            while (match.Success)
+            {
+                count++;
+                Console.WriteLine(match.Value);
+                // To the next match.
+                match = match.NextMatch();
+            }
+        }
+
+        /// <summary>
+        /// Outputs just a whole string if matched.
+        /// </summary>
+        /// <param name="pattern">Regex's pattern.</param>
+        public void MatchStrings(string pattern)
+        {
+            Message("Checking the strings...");
+            Regex regex = new Regex(pattern);
+
+            for (int i = 0; i < Strings.Length; i++)
+                if (regex.IsMatch(Strings[i]))
+                {
+                    Console.WriteLine(Strings[i]);
+                }
+            Message("The checking has ended.");
+        }
+
+        private void Message(string msg)
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("\t[System]: ");
+            sb.Append(msg);
+            Console.WriteLine(sb);
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+    }
+}
+
+using System;
+using System.IO;
+
+namespace Lab5_Regex
+{
+    internal class Program
+    {
+        internal static FileManager FileWorker;
+        static void Main(string[] args)
+        {
+            RunLab5();
+
+            Console.ReadLine();
+        }
+
+        private static void RunLab5()
+        {
+            FileWorker = new FileManager();
+            SetStream("regex.txt");
+            FileWorker.ReadFile();
+
+
+            Message("\n\tTask 1. Check for aaaaa or a aa a or a:");
+            FileWorker.MatchValues("aaaaa|a aa a|a");
+
+
+            Message("\n\tTask 2. Check Digits & Letters:");
+            FileWorker.MatchValues(@"\w{6,}");  // Or @"^\w{6,}$"
+
+
+            Message("\n\tTask 3. Check & output correct E-mails:");
+            string emailPattern = @"^[a-zA-Z][a-zA-Z0-9\-_+.]{0,254}\@(([a-zA-Z][a-zA-Z0-9\-]{0,}))(\.[a-zA-Z]{2,})+$";
+            FileWorker.MatchStrings(emailPattern);
+
+
+            Message("\n\tTask 4. Variant C.");
+            string pattern = @"((?<second_name>[а-яА-Я]{2,})\s+(?<first_name>[а-яА-Я]{2,}))(\s+(?<patronymic>[а-яА-Я]{2,}))?\,\s+(?<age>[1-9]\d{0,2})\s+(год|лет)\,(\s+)?(г\.\s+)?(г.)?(?<city>[а-яА-Я]{2,})";
+            FileWorker.GetPersonalData(pattern);
+
+
+            Message("\n\tTask 5. Lab 5 - testData.xml");
+            // a: Task 4.
+            // b: ^\d+.                                     Replace by: ""
+            // c: ^(<)?(\s+)?(<\w+\>)([^<]+)(\<\/\w+\>)     Replace by: "  $3$4$5"
+            // d: \<(\w+)\>([^<]+)\<\/(\w+)\>               Replace by: "<$1>$2</$1>"
+
+
+            Message("\n\tLab 5. Additional task 1.");
+            SetStream("additional_task1.txt");
+            FileWorker.ReadFile();
+            string shopPattern = @"(?<weight>(?:\d+\.)?(?:[0-9]+)?[1-9]{1}(?:[0-9]+)?)(?:\s+)?кг\.?(?:\s+)?(?<name>[а-яА-Я]+)(?:\s+)?\-(?:\s+)?(?<price>[1-9][0-9]{0,8})(?:\s+)?руб\.?";
+            FileWorker.GetShopPriceList(shopPattern);
+
+
+            Message("\n\tLab 5. Additional task 2.");
+            SetStream("additional_task2.txt");
+            FileWorker.ReadFile();
+            //string websitePattern = @"((http|https|ftp):(?:\/\/|\\\\))?(?:www\.)?([\w\-_]+)(\.[\w\-_]+){1,4}";
+            string websitePattern = @"(?<protocol>(?:http|https|ftp):\/\/)?(?:www)?(?<domain>[\w_]+[\w\-_]+(?:\.[\w_]+[\w\-_]+){1,4})";
+            FileWorker.GetURLs(websitePattern, "savedUrls.txt");
+        }
+
+        private static void Message(string msg)
+        {
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine(msg);
+            Console.ForegroundColor= ConsoleColor.White;
+        }
+
+        private static void SetStream(string fileName)
+        {
+            StreamReader sr = new StreamReader(new FileStream(
+                Path.Combine(Environment.CurrentDirectory, fileName),
+                FileMode.Open));
+            FileWorker.SetStream(sr);
+        }
+    }
+}
+
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+// Общие сведения об этой сборке предоставляются следующим набором
+// набора атрибутов. Измените значения этих атрибутов для изменения сведений,
+// связанные с этой сборкой.
+[assembly: AssemblyTitle("Lab5_Regex")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Lab5_Regex")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// Установка значения False для параметра ComVisible делает типы в этой сборке невидимыми
+// для компонентов COM. Если необходимо обратиться к типу в этой сборке через
+// из модели COM задайте для атрибута ComVisible этого типа значение true.
+[assembly: ComVisible(false)]
+
+// Следующий GUID представляет идентификатор typelib, если этот проект доступен из модели COM
+[assembly: Guid("71b049ca-4b1a-45a8-b015-7176501f2f6f")]
+
+// Сведения о версии сборки состоят из указанных ниже четырех значений:
+//
+//      Основной номер версии
+//      Дополнительный номер версии
+//      Номер сборки
+//      Номер редакции
+//
+// Можно задать все значения или принять номера сборки и редакции по умолчанию 
+// используя "*", как показано ниже:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+

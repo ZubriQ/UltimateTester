@@ -6,7 +6,7 @@ namespace PlagiarismApp.Models
     public class ProjectModel
     {
         [MaxLength(50)] // not required yet
-        public string? Name { get; set; }
+        public string? FileName { get; set; }
 
         [MaxLength(100)] // TODO: not required yet
         public string? GitUrl { get; set; }

@@ -1,0 +1,1039 @@
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+
+namespace Lab9_Photo_studio
+{
+    /// <summary>
+    /// Логика взаимодействия для App.xaml
+    /// </summary>
+    public partial class App : Application
+    {
+    }
+}
+
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace Lab9_Photo_studio
+{
+    public partial class MainWindow : Window
+    {
+        public string PathLoadFrom { get { return txtLoadFrom.Text; } }
+        public string PathSortTo { get { return txtSortTo.Text; } }
+
+        private PhotoFileWorker _fileWorker;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            InitializeStandardPaths();
+            _fileWorker = new PhotoFileWorker();
+            InitializeEventSubscriptions();
+        }
+
+        private void InitializeEventSubscriptions()
+        {
+            _fileWorker.OnFileCopy += LogCopiedFile;
+            _fileWorker.OnCopyError += LogCopyError;
+            _fileWorker.OnDuplicateRemove += LogRemovedFile;
+            _fileWorker.OnFinish += UpdateSortingStatus;
+        }
+
+        // Load photographs.
+        private void btnLoadPhotos_Click(object sender, RoutedEventArgs e)
+        {
+            bool isSuccessful = _fileWorker.GetPhotoFiles(PathLoadFrom, PathSortTo);
+            if (isSuccessful)
+            {
+                ChangeLoadStatusState();
+                _fileWorker.DeleteDuplicatePaths();
+                _fileWorker.SortByCreationDate();
+            }
+            else
+            {
+                lblLoadStatus.Content = $"such folder does not exist.";
+                lblLoadStatus.Foreground = new SolidColorBrush(Colors.Red);
+            }
+        }
+
+        private void ChangeLoadStatusState()
+        {
+            if (_fileWorker.Files.Count > 0)
+            {
+                EnableSortingButtons();
+                lblLoadStatus.Content = $"files found: {_fileWorker.Files.Count}.";
+                lblLoadStatus.Foreground = new SolidColorBrush(Colors.Green);
+                lblSortingStatus.Content = "choose sorting algorithm . . .";
+                //btnLoadPhotos.IsEnabled = false;
+            }
+            else
+            {
+                FilesNotFound(lblLoadStatus);
+            }
+        }
+
+        private void FilesNotFound(Label label)
+        {
+            label.Content = $"the folder is empty.";
+            label.Foreground = new SolidColorBrush(Colors.Red);
+        }
+
+        private void UpdateSortingStatus(object sender, FileWorkerEventArgs e)
+        {
+            lblSortingStatus.Content = $"";
+            if (e.FilesCount > 0)
+            {
+                lblSortingStatus.Foreground = new SolidColorBrush(Colors.Green);
+                lblSortingStatus.Content = $"files copied: {e.FilesCount}.";
+            }
+            else
+                FilesNotFound(lblSortingStatus);
+        }
+
+        private void LogCopiedFile(object sender, FileWorkerEventArgs e)
+        {
+            Log($"\t[Copied From]:\t{e.From}\n\t[Copied To]:\t{e.To}\n");
+        }
+
+        private void LogCopyError(object sender, FileWorkerEventArgs e)
+        {
+            Log($"\t[Error]: {e.CopyError} [Was copying from]: {e.From} [To]: {e.To}\n");
+        }
+
+        private void LogRemovedFile(object sender, FileWorkerEventArgs e)
+        {
+            Log($"\t[File removed]:\t{e.RemovedFile}\n");
+        }
+
+        private void Log(string msg)
+        {
+            txtConsole.Text += msg;
+        }
+
+        #region Sorting
+        private void btnSortByDay_Click(object sender, RoutedEventArgs e)
+        {
+            _fileWorker.CopyFiles(SortOption.Day);
+        }
+
+        private void btnSortByWeek_Click(object sender, RoutedEventArgs e)
+        {
+            _fileWorker.CopyFiles(SortOption.Week);
+        }
+
+        private void btnSortByMonth_Click(object sender, RoutedEventArgs e)
+        {
+            _fileWorker.CopyFiles(SortOption.Month);
+        }
+        #endregion
+
+        void EnableSortingButtons()
+        {
+            btnSortByDay.IsEnabled = true;
+            btnSortByWeek.IsEnabled = true;
+            btnSortByMonth.IsEnabled = true;
+        }
+
+        void InitializeStandardPaths()
+        {
+            txtLoadFrom.Text = @"D:\PhotoStudio";
+            txtSortTo.Text = @"D:\PhotoStudioSorted";
+        }
+
+        // Test cities data.
+        void CreateCitiesJson()
+        {
+            List<GPSMetadata> Cities = new List<GPSMetadata>();
+            Cities.Add(new GPSMetadata("Novosibirsk", 54.9833, 82.8964));
+            Cities.Add(new GPSMetadata("Moscow", 55.7558, 37.6173));
+            Cities.Add(new GPSMetadata("Barnaul", 53.3497, 83.7836));
+            Cities.Add(new GPSMetadata("Omsk", 54.9914, 73.3645));
+            Cities.Add(new GPSMetadata("Krasnoyarsk", 56.0153, 92.8932));
+            Cities.Add(new GPSMetadata("Austin (Texas)", 30.2672, -97.7431));
+
+            //File.WriteAllText("cities.json", JsonConvert.SerializeObject(Cities));
+            using (StreamWriter file = File.CreateText("cities.json"))
+            {
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.Serialize(file, Cities);
+            }
+        }
+    }
+}
+
+using System.Reflection;
+using System.Resources;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Windows;
+
+// Общие сведения об этой сборке предоставляются следующим набором
+// набор атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
+// связанные со сборкой.
+[assembly: AssemblyTitle("Lab9_Photo_studio")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Lab9_Photo_studio")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// Установка значения False для параметра ComVisible делает типы в этой сборке невидимыми
+// для компонентов COM. Если необходимо обратиться к типу в этой сборке через
+// из модели COM, установите атрибут ComVisible для этого типа в значение true.
+[assembly: ComVisible(false)]
+
+//Чтобы начать создание локализуемых приложений, задайте
+//<UICulture>CultureYouAreCodingWith</UICulture> в файле .csproj
+//в <PropertyGroup>. Например, при использовании английского (США)
+//в своих исходных файлах установите <UICulture> в en-US.  Затем отмените преобразование в комментарий
+//атрибута NeutralResourceLanguage ниже.  Обновите "en-US" в
+//строка внизу для обеспечения соответствия настройки UICulture в файле проекта.
+
+//[assembly: NeutralResourcesLanguage("en-US", UltimateResourceFallbackLocation.Satellite)]
+
+
+[assembly: ThemeInfo(
+    ResourceDictionaryLocation.None, //где расположены словари ресурсов по конкретным тематикам
+                                     //(используется, если ресурс не найден на странице,
+                                     // или в словарях ресурсов приложения)
+    ResourceDictionaryLocation.SourceAssembly //где расположен словарь универсальных ресурсов
+                                              //(используется, если ресурс не найден на странице,
+                                              // в приложении или в каких-либо словарях ресурсов для конкретной темы)
+)]
+
+
+// Сведения о версии для сборки включают четыре следующих значения:
+//
+//      Основной номер версии
+//      Дополнительный номер версии
+//      Номер сборки
+//      Номер редакции
+//
+// Можно задать все значения или принять номера сборки и редакции по умолчанию 
+// используя "*", как показано ниже:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     Этот код был создан программным средством.
+//     Версия среды выполнения: 4.0.30319.42000
+//
+//     Изменения в этом файле могут привести к неправильному поведению и будут утрачены, если
+//     код создан повторно.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+namespace Lab9_Photo_studio.Properties
+{
+
+
+    /// <summary>
+    ///   Класс ресурсов со строгим типом для поиска локализованных строк и пр.
+    /// </summary>
+    // Этот класс был автоматически создан при помощи StronglyTypedResourceBuilder
+    // класс с помощью таких средств, как ResGen или Visual Studio.
+    // Для добавления или удаления члена измените файл .ResX, а затем перезапустите ResGen
+    // с параметром /str или заново постройте свой VS-проект.
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    internal class Resources
+    {
+
+        private static global::System.Resources.ResourceManager resourceMan;
+
+        private static global::System.Globalization.CultureInfo resourceCulture;
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal Resources()
+        {
+        }
+
+        /// <summary>
+        ///   Возврат кэшированного экземпляра ResourceManager, используемого этим классом.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Resources.ResourceManager ResourceManager
+        {
+            get
+            {
+                if ((resourceMan == null))
+                {
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Lab9_Photo_studio.Properties.Resources", typeof(Resources).Assembly);
+                    resourceMan = temp;
+                }
+                return resourceMan;
+            }
+        }
+
+        /// <summary>
+        ///   Переопределяет свойство CurrentUICulture текущего потока для всех
+        ///   подстановки ресурсов с помощью этого класса ресурсов со строгим типом.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Globalization.CultureInfo Culture
+        {
+            get
+            {
+                return resourceCulture;
+            }
+            set
+            {
+                resourceCulture = value;
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//     Runtime Version:4.0.30319.42000
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+namespace Lab9_Photo_studio.Properties
+{
+
+
+    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "11.0.0.0")]
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase
+    {
+
+        private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
+
+        public static Settings Default
+        {
+            get
+            {
+                return defaultInstance;
+            }
+        }
+    }
+}
+
+using System;
+using System.Text;
+
+namespace Lab9_Photo_studio
+{
+    internal class Date
+    {
+        private StringBuilder _sb;
+        private DateTime _date;
+
+        public int Year => _date.Year;
+        public int Month => _date.Month;
+        public int Day => _date.Day;
+
+        public int Week { get; set; }
+
+
+        public Date(DateTime date)
+        {
+            _date = date;
+            Week = GetWeekNumberOfMonth(date);
+        }
+
+        static int GetWeekNumberOfMonth(DateTime date)
+        {
+            date = date.Date;
+            DateTime firstMonthDay = new DateTime(date.Year, date.Month, 1);
+            DateTime firstMonthMonday = firstMonthDay.AddDays((DayOfWeek.Monday + 7 - firstMonthDay.DayOfWeek) % 7);
+            if (firstMonthMonday > date)
+            {
+                firstMonthDay = firstMonthDay.AddMonths(-1);
+                firstMonthMonday = firstMonthDay.AddDays((DayOfWeek.Monday + 7 - firstMonthDay.DayOfWeek) % 7);
+            }
+            return (date - firstMonthMonday).Days / 7 + 1;
+        }
+
+        public string GetDay()
+        {
+            _sb = new StringBuilder();
+            _sb.Append(Year);
+            _sb.Append('-');
+            _sb.Append(Month);
+            _sb.Append('-');
+            _sb.Append(Day);
+            return _sb.ToString();
+        }
+
+        public string GetWeek()
+        {
+            _sb = new StringBuilder();
+            _sb.Append(Year);
+            _sb.Append("-");
+            _sb.Append(Month);
+            _sb.Append(" week-");
+            _sb.Append(Week);
+            return _sb.ToString();
+        }
+
+        public string GetMonth()
+        {
+            _sb = new StringBuilder();
+            _sb.Append(Year);
+            _sb.Append("-");
+            _sb.Append(Month);
+            return _sb.ToString();
+        }
+    }
+}
+using System;
+using System.IO;
+using System.Drawing;
+using System.Drawing.Imaging;
+
+namespace Lab9_Photo_studio
+{
+    abstract class FileWorker
+    {
+        private string _copyright = "zubri-proofed";
+        private string _watermark = "watercat.bmp";
+
+        public EventHandler<FileWorkerEventArgs> OnFileCopy;
+        public EventHandler<FileWorkerEventArgs> OnCopyError;
+
+        public void Copy(string from, string to)
+        {
+            try
+            {
+                File.Copy(from, to, true);
+            }
+            catch (IOException copyError)
+            {
+                RaiseCopyErrorEvent(from, to, copyError.Message);
+            }
+            RaiseFileCopyEvent(from, to);
+        }
+
+        #region Raise File Copy events
+        private void RaiseFileCopyEvent(string from, string to)
+        {
+            if (OnFileCopy != null)
+            {
+                FileWorkerEventArgs args = new FileWorkerEventArgs()
+                {
+                    From = from,
+                    To = to
+                };
+                OnFileCopy(this, args);
+            }
+        }
+
+        private void RaiseCopyErrorEvent(string from, string to, string error)
+        {
+            if (OnFileCopy != null)
+            {
+                FileWorkerEventArgs args = new FileWorkerEventArgs()
+                {
+                    From = from,
+                    To = to,
+                    CopyError = error
+                };
+                OnFileCopy(this, args);
+            }
+        }
+        #endregion
+
+        #region Textual watermark
+        public void WatermarkDiagonally(string loadFromPath, string saveToPath)
+        {
+            try
+            {
+                Image img = Image.FromFile(loadFromPath);
+                var verticalTranslate = -50;
+                using (var brush = new SolidBrush(Color.Red))
+                using (Graphics g = Graphics.FromImage(img))
+                {
+                    Font font = null;
+                    SizeF text = new SizeF();
+                    InitializeFont(g, img, ref font, ref text);
+                    double hypotenuse = Math.Sqrt(img.Width * img.Width + img.Height * img.Height);
+                    int rowCount = (int)(hypotenuse / font.Height);
+                    int colCount = (int)Math.Ceiling(hypotenuse / text.Width);
+
+                    for (int i = 0; i < rowCount; i++)
+                    {
+                        for (int j = -1; j < colCount; j++)
+                        {
+                            g.TranslateTransform((int)(j * text.Width- i*font.Size), verticalTranslate);
+                            g.RotateTransform(-45);
+                            g.TranslateTransform((int)(j * text.Height), verticalTranslate);
+                            g.DrawString(_copyright, font, brush, new PointF(-img.Width * 0.2f, 0));
+                            g.ResetTransform();
+                        }
+                        verticalTranslate += (int)(1.5 * font.Height);
+                        g.ResetTransform();
+                    }
+                    g.Save();
+                }
+                img.Save(saveToPath, ImageFormat.Jpeg);
+            }
+            catch { }
+        }
+
+        public void Watermark(string loadFromPath, string saveToPath)
+        {
+            Image img = Image.FromFile(loadFromPath);
+            using (var frontBrush = new SolidBrush(Color.FromArgb(90, 255, 255, 255)))
+            using (var backBrush = new SolidBrush(Color.FromArgb(90, 0, 0, 0)))
+            using (Graphics g = Graphics.FromImage(img))
+            {
+                Font font = null;
+                SizeF text = new SizeF();
+                InitializeFont(g, img, ref font, ref text);
+                int rowCount = (int)Math.Ceiling(img.Height / text.Height / 2);
+                int colCount = (int)Math.Ceiling(img.Width / text.Width);
+
+                float halfTextHeight = text.Height / 2;
+                double percent = 100.0 / (rowCount + 1) / 100.0;
+                int yPixelsFromBottom = (int)(img.Height * percent);
+                float yFromBottom = (img.Height - yPixelsFromBottom) - halfTextHeight;
+                int oddRowOffset = (int)text.Width / 3;
+
+                for (int i = 0; i < rowCount; i++)
+                {
+                    for (int j = 0; j < colCount + 1; j++)
+                    {
+                        yPixelsFromBottom = (int)(img.Height * (percent + (percent * i)));
+                        yFromBottom = img.Height - yPixelsFromBottom - halfTextHeight;
+                        float xPos = (text.Width * j) - text.Width;
+                        if (i % 2 == 0)
+                        {
+                            g.DrawString(_copyright, font, backBrush, new PointF(xPos + 2, yFromBottom + 2));
+                            g.DrawString(_copyright, font, frontBrush, new PointF(xPos, yFromBottom));
+                        }
+                        else if (i != rowCount)
+                        {
+                            xPos += oddRowOffset;
+                            g.DrawString(_copyright, font, backBrush, new PointF(xPos + 2, yFromBottom + 2));
+                            g.DrawString(_copyright, font, frontBrush, new PointF(xPos, yFromBottom));
+                        }
+                    }
+                }
+            }
+            img.Save(saveToPath, ImageFormat.Jpeg);
+        }
+
+        // Determine which font size to use.
+        void InitializeFont(Graphics grPhoto, Image img, ref Font crFont, ref SizeF crSize)
+        {
+            int fontSize = 141;
+            for (int i = 0; i < 70; i++) // Step: 2 sizes
+            {
+                crFont = new Font("cambria", fontSize - (2 * i), FontStyle.Bold);
+                crSize = grPhoto.MeasureString(_copyright, crFont);
+                if ((ushort)crSize.Width < img.Width && (ushort)crSize.Height < img.Height)
+                    break;
+            }
+        }
+        #endregion
+
+        #region Image watermark methods
+        // Opacity depends on 0.7f value ([3][3]).
+        float[][] InitializeOpacity()
+        {
+            float[][] arr = { new float[] {1.0f,  0.0f,  0.0f,  0.0f, 0.0f},
+                              new float[] {0.0f,  1.0f,  0.0f,  0.0f, 0.0f},
+                              new float[] {0.0f,  0.0f,  1.0f,  0.0f, 0.0f},
+                              new float[] {0.0f,  0.0f,  0.0f,  0.7f, 0.0f},
+                              new float[] {0.0f,  0.0f,  0.0f,  0.0f, 1.0f}};
+            return arr;
+        }
+        void InitializeColorMap(ColorMap colorMap)
+        {
+            // The Colour to transperentize with 0 0 0 0.
+            colorMap.OldColor = Color.FromArgb(255, 255, 255, 255);
+            colorMap.NewColor = Color.FromArgb(0, 0, 0, 0);
+        }
+        #endregion
+    }
+}
+
+namespace Lab9_Photo_studio
+{
+    public class FileWorkerEventArgs
+    {
+        public string From { get; set; }
+        public string To { get; set; }
+        public string RemovedFile { get; set; }
+        public string CopyError { get; set; }
+        public int FilesCount { get; set; }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Text;
+
+namespace Lab9_Photo_studio
+{
+    internal class GPSMetadata
+    {
+        private const double _radians = Math.PI / 180;
+
+        /// <summary>
+        /// City Name / Image Path.
+        /// </summary>
+        public string ObjectName { get; set; }
+
+        /// <summary>
+        /// N - S.
+        /// </summary>
+        public double Longitude { get; set; }
+
+        /// <summary>
+        /// W - E.
+        /// </summary>
+        public double Latitude { get; set; }
+
+        public string NearestCity { get; set; }
+
+        // For JSON serialization.
+        public GPSMetadata() { }
+
+        // For adding a city.
+        public GPSMetadata(string cityName, double latitude, double longitude)
+        {
+            ObjectName = cityName;
+            Longitude = longitude;
+            Latitude = latitude;
+            NearestCity = cityName;
+        }
+
+        // For adding an image.
+        public GPSMetadata(FileInfo image)
+        {
+            ObjectName = image.FullName;
+            InitializeCoordinates(image);
+        }
+
+        void InitializeCoordinates(FileInfo image)
+        {
+            if (image.Extension == ".jpg")
+            {
+                Image img = new Bitmap(image.FullName);
+                PropertyItem[] props;
+                try
+                {
+                    props = GetGPSProperties(img); // If no gps data.
+                    InitializeGPSMetadata(props);
+                }
+                catch (ArgumentException) // If the image has no gps data.
+                {
+                    InitializeUnknownLocation();
+                }
+            }
+            else
+            {
+                InitializeUnknownLocation();
+            }
+        }
+
+        void InitializeGPSMetadata(PropertyItem[] props)
+        {
+            // N W S E.
+            string latitudeRef = Encoding.ASCII.GetString(new byte[1] { props[0].Value[0] });
+            string longitudeRef = Encoding.ASCII.GetString(new byte[1] { props[2].Value[0] });
+            // Latitude.
+            uint[] latitudeValues = GetLatLongValues(props[1]);
+            Latitude = ConvertDegreeAngleToDouble(latitudeValues[0] / latitudeValues[1],
+                latitudeValues[2] / latitudeValues[3], latitudeValues[4] / latitudeValues[5], latitudeRef);
+            // Longitude.
+            uint[] longitudeValues = GetLatLongValues(props[3]);
+            Longitude = ConvertDegreeAngleToDouble(longitudeValues[0] / longitudeValues[1],
+                longitudeValues[2] / longitudeValues[3], longitudeValues[4] / longitudeValues[5], longitudeRef);
+        }
+
+        public static double ConvertDegreeAngleToDouble(double degrees, double minutes, double seconds, string latLongRef)
+        {
+            double result = ConvertDegreeAngleToDouble(degrees, minutes, seconds);
+            if (latLongRef == "S" || latLongRef == "W")
+            {
+                result *= -1;
+            }
+            return result;
+        }
+
+        public static double ConvertDegreeAngleToDouble(double degrees, double minutes, double seconds)
+        {
+            return degrees + (minutes / 60) + (seconds / 3600);
+        }
+
+        // Gets the distance between two locations;
+        // The Haversine Formula.
+        public static double HaversineDistance(GPSMetadata pos1, GPSMetadata pos2)
+        {
+            double R = 6371; // the radius of the Earth.
+            var lat = ToRadians(pos2.Latitude - pos1.Latitude);
+            var lng = ToRadians(pos2.Longitude - pos1.Longitude);
+            double dividedLatBy2 = lat / 2;
+            double dividedLngBy2 = lng / 2;
+            var sin2lat = Math.Sin(dividedLatBy2) * Math.Sin(dividedLatBy2);
+            var sin2lng = Math.Sin(dividedLngBy2) * Math.Sin(dividedLngBy2);
+            var cos2 = Math.Cos(ToRadians(pos1.Latitude)) * Math.Cos(ToRadians(pos2.Latitude));
+            var h1 = sin2lat + cos2 * sin2lng;
+            var h2 = 2 * Math.Asin(Math.Min(1, Math.Sqrt(h1)));
+            return R * h2;
+        }
+
+        static double ToRadians(double value)
+        {
+            return value * _radians;
+        }
+
+        PropertyItem[] GetGPSProperties(Image img)
+        {
+            return new PropertyItem[] {
+                   img.GetPropertyItem(1),
+                   img.GetPropertyItem(2),
+                   img.GetPropertyItem(3),
+                   img.GetPropertyItem(4),
+                };
+        }
+
+        uint[] GetLatLongValues(PropertyItem prop)
+        {
+            return new uint[]
+            {
+                BitConverter.ToUInt32(prop.Value, 0),
+                BitConverter.ToUInt32(prop.Value, 4),
+                BitConverter.ToUInt32(prop.Value, 8),
+                BitConverter.ToUInt32(prop.Value, 12),
+                BitConverter.ToUInt32(prop.Value, 16),
+                BitConverter.ToUInt32(prop.Value, 20),
+            };
+        }
+
+        void InitializeUnknownLocation()
+        {
+            //Latitude = 0;
+            //Longitude = 0;
+            // TODO: add a bool state if has gps metadata?
+            NearestCity = "Unknown";
+        }
+    }
+}
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace Lab9_Photo_studio
+{
+    internal class PhotoFileWorker : FileWorker
+    {
+        private readonly string[] _filters;
+        private SortOption _sortBy;
+
+        public DirectoryInfo FolderFrom { get; set; }
+        public DirectoryInfo FolderTo { get; set; }
+        public DirectoryInfo FolderWatermarks { get; set; }
+
+        public List<FileInfo> Files { get; set; }
+        public List<GPSMetadata> ImagesMetadata { get; set; }
+        public static List<GPSMetadata> CitiesMetadata { get; set; }
+
+        public EventHandler<FileWorkerEventArgs> OnDuplicateRemove;
+        public EventHandler<FileWorkerEventArgs> OnFinish;
+
+        public PhotoFileWorker() 
+        {
+            _filters = new string[] { "jpg", "jpeg", "png", "gif", "tiff", "bmp", "svg" };
+            ImagesMetadata = new List<GPSMetadata>();
+            InitializeCitiesMetadataFromLocalFile();
+
+            // Test: Should be equal to 347.3 Km.
+            //var d = GPSMetadata.HaversineDistance(new GPSMetadata("Test1", 41.507483, -99.436554),
+            //    new GPSMetadata("Test2", 38.504048, -98.315949));
+        }
+
+        void InitializeCitiesMetadataFromLocalFile()
+        {
+            //List<GPSMetadata> metadata = JsonConvert.DeserializeObject<List<GPSMetadata>>(File.ReadAllText("cities.json"));
+            using (StreamReader file = File.OpenText("cities.json"))
+            {
+                JsonSerializer serializer = new JsonSerializer();
+                CitiesMetadata = (List<GPSMetadata>)serializer.Deserialize(file, typeof(List<GPSMetadata>));
+            }
+        }
+
+        public bool GetPhotoFiles(string from, string to)
+        {
+            FolderFrom = new DirectoryInfo(from);
+            FolderTo = new DirectoryInfo(to);
+            FolderWatermarks = new DirectoryInfo(Path.Combine(to, "Watermarks"));
+            Files = new List<FileInfo>();
+            ImagesMetadata = new List<GPSMetadata>();
+
+            try
+            {
+                foreach (var filter in _filters)
+                    Files.AddRange(FolderFrom.GetFiles(string.Format("*.{0}", filter),
+                        SearchOption.AllDirectories));
+                return true; // Successful Completion.
+            }
+            catch (DirectoryNotFoundException)
+            {
+                return false; // Unsuccessful Completion.
+            }
+        }
+
+        public void DeleteDuplicatePaths()
+        {
+            for (int i = 0; i < Files.Count; i++)
+                for (int j = 0; j < Files.Count; j++)
+                    if (i != j)
+                    {
+                        if (CompareImages(Files[i], Files[j])) 
+                        {
+                                Files.Remove(Files[j]);
+                                RaiseDuplicateRemoveEvent(Files[j].Name);
+                        }
+                    }
+        }
+
+        // a. File name & File size.
+        private bool CompareImages(FileInfo file1, FileInfo file2) 
+        {
+            return (file1.Name == file2.Name) && (file1.Length == file2.Length);
+        }
+
+        public void SortByCreationDate()
+        {
+            Files = Files.OrderBy(x => x.CreationTime).ToList();
+        }
+
+        private void CreateFolders(List<Date> folders)
+        {
+            for (int i = 0; i < folders.Count; i++) // Create folders in the directory.
+            {
+                InitializeCopyPath(folders[i]);
+            }
+        }
+
+        // Initializes the copy path
+        private void InitializeCopyPath(Date folder)
+        {
+            string path, watermarkPath;
+            switch (_sortBy)
+            {
+                case SortOption.Day:
+                    path = Path.Combine(FolderTo.FullName, "Sorted by Day", folder.GetDay());
+                    watermarkPath = Path.Combine(FolderTo.FullName, FolderWatermarks.Name, "Sorted by Day", folder.GetDay());
+                    CreateDirectories(path, watermarkPath);
+                    break;
+                case SortOption.Month:
+                    path = Path.Combine(FolderTo.FullName, "Sorted by Month", folder.GetMonth());
+                    watermarkPath = Path.Combine(FolderTo.FullName, FolderWatermarks.Name, "Sorted by Month", folder.GetMonth());
+                    CreateDirectories(path, watermarkPath);
+                    break;
+                case SortOption.Week:
+                    path = Path.Combine(FolderTo.FullName, "Sorted by Week", folder.GetWeek());
+                    watermarkPath = Path.Combine(FolderTo.FullName, FolderWatermarks.Name, "Sorted by Week", folder.GetWeek());
+                    CreateDirectories(path, watermarkPath);
+                    break;
+            }
+        }
+
+        void CreateDirectories(string path, string watermarkPath)
+        {
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+            if (!Directory.Exists(watermarkPath))
+                Directory.CreateDirectory(watermarkPath);
+        }
+
+        public void CopyFiles(SortOption sortBy)
+        {
+            _sortBy = sortBy;
+            List<Date> folders = new List<Date>();
+            // Create folders.
+            InitializeWeekFolders(folders);
+            CreateFolders(folders);
+            // Copy files & watermarked files.
+            CopyFiles();
+            MakeWatermarks();
+            RaiseFinishEvent(Files.Count);
+        }
+
+        void MakeWatermarks()
+        {
+            for (int i = 0; i < Files.Count; i++)
+            {
+                Date date = new Date(Files[i].CreationTime);
+                string folderName = InitializeSortedFolderName(date);
+                string copyTo = Path.Combine(FolderWatermarks.FullName, folderName, Files[i].Name);
+                Watermark(Files[i].FullName, copyTo);
+            }
+        }
+
+        void CopyFiles()
+        {
+            for (int i = 0; i < Files.Count; i++)
+            {
+                // Copy a file.
+                Date date = new Date(Files[i].CreationTime);
+                string folderName = InitializeSortedFolderName(date);
+                string copyTo = Path.Combine(FolderTo.FullName, folderName, Files[i].Name);
+                Copy(Files[i].FullName, copyTo); 
+
+                // Add metadata of the copying file.
+                var metadata = new GPSMetadata(Files[i]);
+                if (metadata.NearestCity != "Unknown")
+                {
+                    SetNearestCities(metadata);
+                }
+                ImagesMetadata.Add(metadata);
+            }
+        }
+
+        void SetNearestCities(GPSMetadata metadata)
+        {
+            double min = double.MaxValue;
+            string cityName = null;
+            foreach (var city in CitiesMetadata)
+            {
+                var val = GPSMetadata.HaversineDistance(metadata, city);
+                if (val < min)
+                {
+                    min = val;
+                    cityName = city.ObjectName;
+                }
+            }
+            metadata.NearestCity = cityName;
+        }
+
+        private string InitializeSortedFolderName(Date date)
+        {
+            string folderName = null;
+            switch (_sortBy)
+            {
+                case SortOption.Day:
+                    folderName = Path.Combine("Sorted by Day\\", date.GetDay());
+                    break;
+                case SortOption.Week:
+                    folderName = Path.Combine("Sorted by Week\\", date.GetWeek());
+                    break;
+                case SortOption.Month:
+                    folderName = Path.Combine("Sorted by Month\\", date.GetMonth());
+                    break;
+            }
+            return folderName;
+        }
+
+        private void InitializeWeekFolders(List<Date> folders)
+        {
+            for (int i = 0; i < Files.Count; i++) // Find out what folders to create.
+                CreateFolder(folders, i);
+        }
+
+        private void CreateFolder(List<Date> folders, int index)
+        {
+            Date folder = new Date(Files[index].CreationTime);
+            switch (_sortBy)
+            {
+                case SortOption.Day:
+                    CreateDayFolder(folders, folder);
+                    break;
+                case SortOption.Week:
+                    CreateWeekFolder(folders, folder);
+                    break;
+                case SortOption.Month:
+                    CreateMonthFolder(folders, folder);
+                    break;
+            }
+        }
+
+        private void CreateDayFolder(List<Date> folders, Date folder)
+        {
+            if (!folders.Any(f => (f.Day == folder.Day) &&
+                                  (f.Month == folder.Month) &&
+                                  (f.Year == folder.Year)))
+                folders.Add(folder);
+        }
+
+        private void CreateWeekFolder(List<Date> folders, Date folder)
+        {
+            if (!folders.Any(f => (f.Week == folder.Week) &&
+                                  (f.Month == folder.Month) &&
+                                  (f.Year == folder.Year)))
+                folders.Add(folder);
+        }
+
+        private void CreateMonthFolder(List<Date> folders, Date folder)
+        {
+            if (!folders.Any(f => (f.Month == folder.Month) &&
+                                          (f.Year == folder.Year)))
+                folders.Add(folder);
+        }
+
+        #region Raise On DuplicateRemove & Finish events
+        private void RaiseDuplicateRemoveEvent(string removedFile)
+        {
+            if (OnDuplicateRemove != null)
+            {
+                FileWorkerEventArgs args = new FileWorkerEventArgs()
+                {
+                    RemovedFile = removedFile
+                };
+                OnDuplicateRemove(this, args);
+            }
+        }
+
+        private void RaiseFinishEvent(int copiedFilesCount)
+        {
+            if (OnFinish != null)
+            {
+                FileWorkerEventArgs args = new FileWorkerEventArgs()
+                {
+                    FilesCount = copiedFilesCount
+                };
+                OnFinish(this, args);
+            }
+        }
+        #endregion
+    }
+}
+namespace Lab9_Photo_studio
+{
+    internal enum SortOption
+    {
+        Day = 1,
+        Week = 2,
+        Month = 3,
+    }
+}

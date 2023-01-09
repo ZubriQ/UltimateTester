@@ -18,7 +18,7 @@
                 <th>Originality pct.</th>
                 <th>Date</th>
                 <th>Git URL</th>
-                <th>Disc path</th>
+                @*<th>Disc path</th>*@
                 <th>Edit</th>
                 <th>Delete</th>
             </tr>
@@ -33,6 +33,7 @@
                     <td>@project.ProjectType.Description</td>
                     <td>@project.OriginalityPercentage</td>
                     <td>@project.DateOfPassing</td>
+
                     @if (!string.IsNullOrEmpty(@project.GitUrl))
                     {
                         <td>@project.GitUrl</td>
@@ -41,14 +42,16 @@
                     {
                         <td style="color:darkgray">No</td>
                     }
-                    @if (!string.IsNullOrEmpty(@project.PathOnDisc))
+
+@*                    @if (!string.IsNullOrEmpty(@project.PathOnDisc))
                     {
                         <td>@project.PathOnDisc</td>
                     }
                     else
                     {
                         <td style="color:darkgray">No</td>
-                    }
+                    }*@
+
                     <td>
                         <a href="@GetHrefForEditPage(project)">Edit</a>
                     </td>

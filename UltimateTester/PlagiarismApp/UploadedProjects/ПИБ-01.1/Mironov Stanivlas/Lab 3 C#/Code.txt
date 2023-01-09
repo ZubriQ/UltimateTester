@@ -1,0 +1,1407 @@
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+
+namespace Lab6_Integration
+{
+    /// <summary>
+    /// Логика взаимодействия для App.xaml
+    /// </summary>
+    public partial class App : Application
+    {
+    }
+}
+
+using Lab6_Integration.Diagram;
+using Lab6_Integration.Integration;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace Lab6_Integration
+{
+    public partial class CreateChartWindow : Window
+    {
+        public int ChartWidth
+        {
+            get 
+            {
+                int value;
+                Int32.TryParse(txtWidth.Text, out value);
+                return value;
+            }
+        }
+        public int ChartHeight
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtHeight.Text, out value);
+                return value;
+            }
+        }
+
+        public double XRatio
+        {
+            get
+            {
+                double value;
+                Double.TryParse(txtXRatio.Text, out value);
+                return value;
+            }
+        }
+        public double YRatio
+        {
+            get
+            {
+                double value;
+                Double.TryParse(txtYRatio.Text, out value);
+                return value;
+
+            }
+        }
+
+        public int Diameter
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtDiameter.Text, out value);
+                return value;
+            }
+        }
+        public Brush GraphColour
+        {
+            get
+            {
+                return cbGraphColour.SelectedItem as Brush;
+            }
+        }
+
+        public int N
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtN.Text, out value);
+                return value;
+            }
+        }
+
+        public Equation Function
+        {
+            get
+            {
+                return cbGraphColour.SelectedItem as Equation;
+            }
+        }
+
+        public double A
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtA.Text, out value);
+                return value;
+            }
+        }
+        public double B
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtB.Text, out value);
+                return value;
+            }
+        }
+        public double C
+        {
+            get
+            {
+                int value;
+                Int32.TryParse(txtC.Text, out value);
+                return value;
+            }
+        }
+
+        public double X0
+        {
+            get
+            {
+                double value;
+                Double.TryParse(txtX0.Text, out value);
+                return value;
+            }
+        }
+        public double X1
+        {
+            get
+            {
+                double value;
+                Double.TryParse(txtX1.Text, out value);
+                return value;
+            }
+        }
+
+        BinaryWriter _binaryWriter = new BinaryWriter(
+            new FileStream("IntegrationBinaryLog.txt", FileMode.Create));
+        StreamWriter _streamWriter = new StreamWriter(
+            new FileStream("IntegrationLog.txt", FileMode.Create));
+
+        Stopwatch _stopwatch = new Stopwatch();
+
+        public CreateChartWindow()
+        {
+            InitializeComponent();
+            LoadDefaultParameters();
+            LoadColours();
+            LoadIntegrationMethods();
+            LoadFunctions();
+        }
+
+        private void btnCreate_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: check entered values.
+            // Refresh.
+            _stopwatch.Restart();
+            ((MainWindow)Application.Current.MainWindow).drawingCanvas.Children.Clear();
+            // Set.
+            SetChart();
+            //Equation eq = null;
+            //SetEquiation(ref eq);
+            //SetIntegrator(eq);
+            SetIntegrator(); // Now we use a delegate instead of Equation class.
+            SetEquiation();
+            // Draw.
+            ((MainWindow)Application.Current.MainWindow).DrawAxes();
+            //((MainWindow)Application.Current.MainWindow).DrawFunction(X0, X1, eq);
+            ((MainWindow)Application.Current.MainWindow).DrawFunction(X0, X1);
+        }
+
+        private void SetChart()
+        {
+            Axis axes = new Axis(5, 5, new SolidColorBrush(Color.FromRgb(90, 90, 90)));
+            Coordinate center = new Coordinate(ChartWidth / 2, ChartHeight / 2);
+            Coordinate ratio = new Coordinate(XRatio, YRatio);
+            Graph graph = new Graph(Diameter, GraphColour);
+            ((MainWindow)Application.Current.MainWindow).Chart = null;
+            ((MainWindow)Application.Current.MainWindow).Chart = new Chart(center, ratio, axes, graph);
+            ((MainWindow)Application.Current.MainWindow).drawingCanvas.Width = ChartWidth;
+            ((MainWindow)Application.Current.MainWindow).drawingCanvas.Height = ChartHeight;
+            ((MainWindow)Application.Current.MainWindow).ImageWidth = ChartWidth;
+            ((MainWindow)Application.Current.MainWindow).ImageHeight = ChartHeight;
+            ((MainWindow)Application.Current.MainWindow).N = N;
+        }
+
+        private void SetEquiation()
+        {
+            SetFunctionProvider(A, B, C);
+            Integrator integr = ((MainWindow)Application.Current.MainWindow).Integrator;
+            //integr.OnStart += DisableButtons;
+            integr.OnFinish += UpdateVolume;
+            integr.OnFinish += UpdateHeader;
+            integr.OnFinish += ShowProcessingTime;
+            integr.OnStep += WriteToBinaryFile;
+            integr.OnStep += WriteToTextFile;
+            //integr.OnFinish += EnableButtons;
+
+            if (cbFunction.SelectedItem is QuadricEquation)
+            {
+                integr.IntegratingHandler +=
+                    new Integrator.Integration(FunctionProvider.QuadricEquation);
+            }
+            else if (cbFunction.SelectedItem is CosEquation)
+            {
+                integr.IntegratingHandler +=
+                    new Integrator.Integration(FunctionProvider.CosEquation);
+            }
+            else if (cbFunction.SelectedItem is AbsSinEquation)
+            {
+                integr.IntegratingHandler +=
+                    new Integrator.Integration(FunctionProvider.AbsSinEquation);
+            }
+        }
+
+        private void UpdateVolume(object sender, IntegratorEventArgs args)
+        {
+            ((MainWindow)Application.Current.MainWindow).lblVolume.Content = 
+                Math.Round(args.Integr, 4);
+        }
+        private void UpdateHeader(object sender, IntegratorEventArgs args)
+        {
+            ((MainWindow)Application.Current.MainWindow).lblIntegrationMethod.Content =
+                ((MainWindow)Application.Current.MainWindow).Integrator.ToString();
+        }
+
+        private void WriteToBinaryFile(object sender, IntegratorEventArgs args)
+        {
+            _binaryWriter.Write(args.X);
+            _binaryWriter.Write(args.F);
+            _binaryWriter.Write(args.Integr);
+        }
+
+        private void WriteToTextFile(object sender, IntegratorEventArgs args)
+        {
+            _streamWriter.Write("X=");
+            _streamWriter.Write(args.X);
+            _streamWriter.Write(", Y=");
+            _streamWriter.Write(args.F);
+            _streamWriter.Write(", Sum=");
+            _streamWriter.Write(args.Integr);
+            _streamWriter.Write(";\n");
+        }
+
+        private void ShowProcessingTime(object sender, IntegratorEventArgs args)
+        {
+            MessageBox.Show($"Elapsed time: {_stopwatch.Elapsed}");
+        }
+
+        //private void DisableButtons(object sender, IntegratorEventArgs args)
+        //{
+        //    btnCancel.IsEnabled = false;
+        //    btnCreate.IsEnabled = false;
+        //}
+
+        //private void EnableButtons(object sender, IntegratorEventArgs args)
+        //{
+        //    btnCancel.IsEnabled = true;
+        //    btnCreate.IsEnabled = true;
+        //}
+
+        private void SetFunctionProvider(double a, double b, double c)
+        {
+            FunctionProvider.A = a;
+            FunctionProvider.B = b;
+            FunctionProvider.C = c;
+        }
+
+        private void SetIntegrator()
+        {
+            if (cbIntegrationMethod.SelectedItem is RectangularIntegrator)
+                ((MainWindow)Application.Current.MainWindow).Integrator = new RectangularIntegrator();
+            else if (cbIntegrationMethod.SelectedItem is TrapezoidalIntegrator)
+                ((MainWindow)Application.Current.MainWindow).Integrator = new TrapezoidalIntegrator();
+            else if (cbIntegrationMethod.SelectedItem is SimpsonIntegrator)
+                ((MainWindow)Application.Current.MainWindow).Integrator = new SimpsonIntegrator();
+            else if (cbIntegrationMethod.SelectedItem is MonteCarloIntegrator)
+                ((MainWindow)Application.Current.MainWindow).Integrator = new MonteCarloIntegrator();
+        }
+
+        //private void SetEquiation(ref Equation eq)
+        //{
+        //    if (cbFunction.SelectedItem is MyEquation)
+        //    {
+        //        eq = new MyEquation(A, B, C);
+        //    }
+        //    else if (cbFunction.SelectedItem is MyEquation2)
+        //    {
+        //        eq = new MyEquation2(A, B);
+        //    }
+        //    else if (cbFunction.SelectedItem is MyEquation3)
+        //    {
+        //        eq = new MyEquation3(A);
+        //    }
+        //}
+
+        //private void SetIntegrator(Equation eq)
+        //{
+        //    if (cbIntegrationMethod.SelectedItem is RectangularIntegrator)
+        //        ((MainWindow)Application.Current.MainWindow).Integrator = new RectangularIntegrator(eq);
+        //    else if (cbIntegrationMethod.SelectedItem is TrapezoidalIntegrator)
+        //        ((MainWindow)Application.Current.MainWindow).Integrator = new TrapezoidalIntegrator(eq);
+        //    else if (cbIntegrationMethod.SelectedItem is SimpsonIntegrator)
+        //        ((MainWindow)Application.Current.MainWindow).Integrator = new SimpsonIntegrator(eq);
+        //    else if (cbIntegrationMethod.SelectedItem is MonteCarloIntegrator)
+        //        ((MainWindow)Application.Current.MainWindow).Integrator = new MonteCarloIntegrator(eq);
+        //}
+
+        private void btnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        #region Set initial parameters
+        private void LoadDefaultParameters()
+        {
+            txtWidth.Text = "600";
+            txtHeight.Text = "600";
+            txtXRatio.Text = "7";
+            txtYRatio.Text = "1.5";
+            txtDiameter.Text = "1";
+            txtN.Text = "1000";
+            txtA.Text = "5";
+            txtB.Text = "-30";
+            txtC.Text = "-30";
+            txtX0.Text = "-40";
+            txtX1.Text = "40";
+        }
+
+        private void LoadIntegrationMethods()
+        {
+            List<Integrator> integrators = new List<Integrator>();
+            integrators.Add(new RectangularIntegrator());
+            integrators.Add(new TrapezoidalIntegrator());
+            integrators.Add(new SimpsonIntegrator());
+            integrators.Add(new MonteCarloIntegrator());
+            cbIntegrationMethod.ItemsSource = integrators;
+            cbIntegrationMethod.SelectedIndex = 1;
+        }
+
+        private void LoadFunctions()
+        {
+            List<Equation> equations = new List<Equation>();
+            equations.Add(new QuadricEquation());
+            equations.Add(new CosEquation());
+            equations.Add(new AbsSinEquation());
+            cbFunction.ItemsSource = equations;
+            cbFunction.SelectedIndex = 2;
+        }
+
+        private void LoadColours()
+        {
+            List<Brush> colors = new List<Brush>();
+            colors.Add(new SolidColorBrush(Colors.Goldenrod));
+            colors.Add(new SolidColorBrush(Colors.Magenta));
+            colors.Add(new SolidColorBrush(Colors.LightGreen));
+            colors.Add(new SolidColorBrush(Colors.SteelBlue));
+            colors.Add(new SolidColorBrush(Colors.Crimson));
+            cbGraphColour.ItemsSource = colors;
+            cbGraphColour.SelectedIndex = 0;
+        }
+        #endregion
+
+        #region Function parameters
+        private void cbFunction_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbFunction.SelectedItem is QuadricEquation)
+                Equation1TB();
+            else if (cbFunction.SelectedItem is CosEquation)
+                Equation2TB();
+            else if (cbFunction.SelectedItem is AbsSinEquation)
+                Equation3TB();
+        }
+
+        private void Equation1TB()
+        {
+            txtB.IsEnabled = true;
+            txtC.IsEnabled = true;
+        }
+
+        private void Equation2TB()
+        {
+            txtB.IsEnabled = true;
+            txtC.IsEnabled = false;
+        }
+
+        private void Equation3TB()
+        {
+            txtB.IsEnabled = false;
+            txtC.IsEnabled = false;
+        }
+        #endregion
+    }
+}
+
+using System.Windows.Media;
+
+namespace Lab6_Integration.Diagram
+{
+    public class Axis
+    {
+        public int TicksLineLength { get; private set; }
+        public double TicksStepValue { get; private set; }
+        public Brush Colour { get; private set; }
+
+        public Axis() { }
+
+        public Axis(int ticksLineLength, double ticksStepValue, Brush colour)
+        {
+            TicksLineLength = ticksLineLength;
+            TicksStepValue = ticksStepValue;
+            Colour = colour;
+        }
+    }
+}
+
+namespace Lab6_Integration.Diagram
+{
+    public class Chart
+    {
+        public Coordinate GraphCenter { get; private set; }
+
+        public Coordinate Ratio { get; private set; }
+
+        public Axis Axis { get; private set; }
+
+        public Graph Graph { get; private set; }
+
+        public Chart(Coordinate graphCenter, Coordinate ratio, Axis axis, Graph graph)
+        {
+            GraphCenter = graphCenter;
+            Ratio = ratio;
+            Axis = axis;
+            Graph = graph;
+        }
+    }
+}
+
+namespace Lab6_Integration.Diagram
+{
+    public class Coordinate
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+
+        public Coordinate() { }
+
+        public Coordinate(double x, double y) { X = x; Y = y; }
+    }
+}
+
+using System.Windows.Media;
+
+namespace Lab6_Integration.Diagram
+{
+    public class Graph
+    {
+        public int Diameter { get; private set; }
+        public Brush Colour { get; private set; }
+
+        public Graph() { }
+
+        public Graph(int diameter, Brush colour)
+        {
+            Diameter = diameter;
+            Colour = colour;
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab6_Integration
+{
+    public static class FunctionProvider
+    {
+        public static double A { get; set; }
+        public static double B { get; set; }
+        public static double C { get; set; }
+
+        public static double QuadricEquation(double x)
+        {
+            return A * x * x + B * x + C;
+        }
+
+        public static double CosEquation(double x)
+        {
+            return x * x * Math.Cos(x - A) / B;
+        }
+
+        public static double AbsSinEquation(double x)
+        {
+            return A * x * Math.Abs(Math.Sin(x));
+        }
+    }
+}
+
+using System;
+
+namespace Lab6_Integration.Integration
+{
+    public class AbsSinEquation : Equation
+    {
+        private readonly double a;
+
+        public AbsSinEquation() { }
+
+        public AbsSinEquation(double a)
+        {
+            this.a = a;
+        }
+        public override double GetValue(double x)
+        {
+            return a * x * Math.Abs(Math.Sin(x));
+        }
+
+        public override string ToString()
+        {
+            return "Abs Sin equation";
+        }
+    }
+}
+
+using System;
+
+namespace Lab6_Integration.Integration
+{
+    public class CosEquation : Equation
+    {
+        private readonly double a;
+        private readonly double b;
+
+        public CosEquation() { }
+
+        public CosEquation(double a, double b)
+        {
+            this.a = a;
+            this.b = b;
+        }
+        public override double GetValue(double x)
+        {
+            return x * x * Math.Cos(x - a) / b;
+        }
+
+        public override string ToString()
+        {
+            return "Cos equation";
+        }
+    }
+}
+
+namespace Lab6_Integration.Integration
+{
+    public abstract class Equation
+    {
+        public string Name { get; set; }
+        public abstract double GetValue(double value);
+    }
+}
+
+using System;
+using System.Threading;
+
+namespace Lab6_Integration.Integration
+{
+    public abstract class Integrator
+    {
+        //public delegate void IntStepDelegate(double x, double y, double integr);
+        //public delegate void IntFinishDelegate(double integr);
+        //public event IntStepDelegate OnStep;
+        public EventHandler<IntegratorEventArgs> OnStep;
+        //public event IntFinishDelegate OnFinish;
+        public EventHandler<IntegratorEventArgs> OnFinish;
+        public EventHandler<IntegratorEventArgs> OnStart;
+
+        public delegate double Integration(double value);
+        public Integration IntegratingHandler;
+
+        protected Equation equation;
+        public abstract double Integrate(double x1, double x2, int n);
+
+        public Integrator(Equation equation)
+        {
+            if (equation == null)
+            {
+                throw new ArgumentNullException();
+            }
+            this.equation = equation;
+        }
+
+        public Integrator() 
+        {
+            // We don't need equation class anymore.
+            equation = null;
+        }
+
+        protected void RaiseStepEvent(double x, double y, double sum)
+        {
+            //OnStep?.Invoke(x, y, sum);
+            if (OnStep != null)
+            {
+                IntegratorEventArgs e = new IntegratorEventArgs()
+                {
+                    X = x,
+                    F = y,
+                    Integr = sum
+                };
+                OnStep(this, e);
+            }
+        }
+
+        protected void RaiseFinishEvent(double sum)
+        {
+            //OnFinish?.Invoke(sum);
+            if (OnFinish != null)
+            {
+                IntegratorEventArgs e = new IntegratorEventArgs()
+                {
+                    Integr = sum
+                };
+                OnFinish(this, e);
+            }
+        }
+
+        protected void RaiseStartEvent()
+        {
+            if (OnStart != null)
+            {
+                IntegratorEventArgs e = new IntegratorEventArgs();
+                OnStart(this, e);
+            }
+        }
+    }
+}
+
+using System;
+using System.Threading;
+
+namespace Lab6_Integration.Integration
+{
+    internal class MonteCarloIntegrator : Integrator
+    {
+        public MonteCarloIntegrator(Equation equation) : base(equation) { }
+        public MonteCarloIntegrator() { }
+
+        private readonly Random _random = new Random();
+
+        public override double Integrate(double x0, double x1, int n)
+        {
+            if (x0 >= x1)
+            {
+                throw new ArgumentException("Monte Carlo is sad! Don't make Monte Carlo sad.");
+            }
+            if (n > 50000)
+            {
+                throw new ArgumentException("Too many points for poor Monte Carlo. It'd take too much time.");
+            }
+            RaiseStartEvent();
+            // Get min and max y values of a function.
+            double maxY = 0;
+            double minY = 0;
+            GetYLength(x0, x1, ref maxY, ref minY);
+            // Count inside points.
+            int negativePoints = 0;
+            int positivePoints = 0;
+            for (int i = 0; i < n; i++)
+            {
+                Thread.Sleep(1);
+                double randomX = RandomNumberBetween(x0,x1);
+                double randomY = RandomNumberBetween(minY, maxY);
+                double fy = IntegratingHandler(randomX);
+
+                if (randomY < 0 && randomY >= fy) // if y is negative.
+                {
+                    negativePoints++; // if it lies over the function. 
+                }
+                else if (randomY > 0 && randomY <= fy) // else y is positive.
+                { 
+                    positivePoints++; // if it lies under the function.
+                }
+            }
+            double S = (maxY - minY) * (x1 - x0);
+            int K = positivePoints - negativePoints;
+            double result = S * K / n;
+            RaiseFinishEvent(result);
+            return result; // Find and return volume.
+        }
+
+        private void GetYLength(double x0, double x1, ref double maxY, ref double minY)
+        {
+            for (double x = x0; x < x1; x += 1)
+            {
+                double y = IntegratingHandler(x);
+                if (maxY < y)
+                    maxY = y;
+                if (minY > y)
+                    minY = y;
+            }
+        }
+
+        private double RandomNumberBetween(double minValue, double maxValue)
+        {
+            var next = _random.NextDouble();
+            return minValue + (next * (maxValue - minValue));
+        }
+
+        public override string ToString()
+        {
+            return "Monte Carlo";
+        }
+    }
+}
+
+namespace Lab6_Integration.Integration
+{
+    public class QuadricEquation : Equation
+    {
+        private readonly double a;
+        private readonly double b;
+        private readonly double c;
+
+        public QuadricEquation() { }
+
+        public QuadricEquation(double a, double b, double c)
+        {
+            this.a = a;
+            this.b = b;
+            this.c = c;
+        }
+        public override double GetValue(double x)
+        {
+            return a * x * x + b * x + c;
+        }
+
+        public override string ToString()
+        {
+            return "Quad equation";
+        }
+    }
+}
+
+using System;
+using System.Threading;
+
+namespace Lab6_Integration.Integration
+{
+    internal class RectangularIntegrator : Integrator
+    {
+        public RectangularIntegrator(Equation equation) : base(equation) { }
+        public RectangularIntegrator() 
+        {
+            
+        }
+
+        public override double Integrate(double x1, double x2, int n)
+        {
+            if (x1 >= x2)
+            {
+                throw new ArgumentException("Правая граница интегирования должны быть больше левой!");
+            }
+            RaiseStartEvent();
+            /* для интегирования разобъем исходный отрезок на 100 точек. 
+             * Считаем значение функции в точке, умножаем на ширину интервала.
+             * Площадь полученного прямоугольника приблизительно равна значению интеграла на этом отрезке
+             * суммируем значения площадей, получаем значение интеграла на отрезке [X1;X2]*/
+            //определяем ширину интервала:
+            double h = (x2 - x1) / n;
+            double sum = 0; //"накопитель" для значения интеграла
+            for (int i = 0; i < n; i++)
+            {
+                Thread.Sleep(1);
+                //sum = sum + equation.GetValue(x1 + i * h) * h;
+                double x = x1 + i * h;
+                double f = IntegratingHandler(x);
+                sum = sum + f * h;
+                RaiseStepEvent(x, f, sum);
+            }
+            RaiseFinishEvent(sum);
+            return sum;
+        }
+
+        public override string ToString()
+        {
+            return "Rectangle rule";
+        }
+    }
+}
+
+using System;
+using System.Threading;
+
+namespace Lab6_Integration.Integration
+{
+    public class SimpsonIntegrator : Integrator
+    {
+        public SimpsonIntegrator(Equation equation) : base(equation) { }
+        public SimpsonIntegrator() { }
+
+        public override double Integrate(double x1, double x2, int n)
+        {
+            if (x1 >= x2)
+            {
+                throw new ArgumentException("Правая граница интегирования должны быть больше левой!");
+            }
+            if (n < 0)
+            {
+                throw new ArgumentException("N должно быть положительным!");
+            }
+            if (n % 2 != 0)
+            {
+                throw new ArgumentException("N должно быть четным!");
+            }
+            RaiseStartEvent();
+            double h = (x2 - x1) / n;
+            double sum = 0;
+            double x = x1;
+            double f = IntegratingHandler(x1); // function value
+            sum += f * (h / 3);
+            RaiseStepEvent(x1, f, sum);
+            for (int i = 1; i < n; i++)
+            {
+                Thread.Sleep(1);
+                if (i % 2 == 1)
+                {
+                    x = x1 + i * h;
+                    f = 4 * IntegratingHandler(x);
+                    sum += f * (h / 3);
+                }
+                else
+                {
+                    x = x1 + i * h;
+                    f = 2 * IntegratingHandler(x);
+                    sum += f * (h / 3);
+                }
+                RaiseStepEvent(x, f, sum);
+            }
+            f = IntegratingHandler(x2);
+            sum += f * (h / 3);
+            RaiseStepEvent(x2, f, sum);
+            RaiseFinishEvent(sum);
+            return sum;
+        }
+
+        public override string ToString()
+        {
+            return "Simpson's rule";
+        }
+    }
+}
+
+using System;
+using System.Threading;
+
+namespace Lab6_Integration.Integration
+{
+    internal class TrapezoidalIntegrator : Integrator
+    {
+        public TrapezoidalIntegrator(Equation equation) : base(equation) { }
+        public TrapezoidalIntegrator() { }
+
+        public override double Integrate(double x1, double x2, int n)
+        {
+            if (x1 >= x2)
+            {
+                throw new ArgumentException("Правая граница интегирования должны быть больше левой!");
+            }
+            RaiseStartEvent();
+            double h = (x2 - x1) / n;
+            double sum = 0;
+            double f, x;
+            for (int i = 0; i <= n; i++)
+            {
+                Thread.Sleep(1);
+                if (i == 0 || i == n)
+                {
+                    x = x1 + i * h;
+                    f = IntegratingHandler(x);
+                    sum = sum + f * (h / 2);
+                }
+                else
+                {
+                    x = x1 + i * h;
+                    f = IntegratingHandler(x);
+                    sum = sum + f * h;
+                }
+                RaiseStepEvent(x, f, sum);
+            }
+            RaiseFinishEvent(sum);
+            return sum;
+        }
+
+        public override string ToString()
+        {
+            return "Trapezoidal rule";
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab6_Integration
+{
+    public class IntegratorEventArgs
+    {
+        public double X { get; set; }
+        public double F { get; set; }
+        public double Integr { get; set; }
+    }
+}
+
+using Lab6_Integration.Diagram;
+using Lab6_Integration.Integration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace Lab6_Integration
+{
+    public partial class MainWindow : Window
+    {
+        public int ImageWidth;
+        public int ImageHeight;
+
+        public Chart Chart { get; set; }
+        public Equation Function { get; set; }
+        public Integrator Integrator { get; set; }
+
+        /// <summary>
+        /// Either the number of splits or the number of points.
+        /// </summary>
+        public int N { get; set; }
+
+        // Needed to draw points for Monte Carlo.
+        private readonly static Random _random = new Random();
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            drawingDockPanel.Background = new SolidColorBrush(Color.FromRgb(30, 30, 30));
+            drawingCanvas.Background = new SolidColorBrush(Color.FromRgb(42, 42, 42));
+        }
+
+        internal void DrawFunction(double x0, double x1)
+        {
+            double maxY = Chart.GraphCenter.Y;
+            double minY = Chart.GraphCenter.Y;
+            List<Point> coordinates = new List<Point>();
+            for (double x = x0; x < x1; x += 0.02)
+            {
+                double y = -Integrator.IntegratingHandler(x);
+                coordinates.Add(new Point(x * Chart.Ratio.X + Chart.GraphCenter.X,
+                                          y * Chart.Ratio.Y + Chart.GraphCenter.Y));
+                if (maxY < y * Chart.Ratio.Y + Chart.GraphCenter.Y)
+                    maxY = y * Chart.Ratio.Y + Chart.GraphCenter.Y;
+                if (minY > y * Chart.Ratio.Y + Chart.GraphCenter.Y)
+                    minY = y * Chart.Ratio.Y + Chart.GraphCenter.Y;
+            }
+            DrawPolyline(coordinates);
+            ShowIntegrationResult(x0, x1, maxY, minY);
+        }
+
+        private void DrawPolyline(List<Point> points)
+        {
+
+            PointCollection pc = new PointCollection(points);
+            Polyline polyline = new Polyline()
+            {
+                Points = pc,
+                Stroke = Chart.Graph.Colour,
+                StrokeThickness = Chart.Graph.Diameter,
+                StrokeLineJoin = PenLineJoin.Round
+            };
+            Canvas.SetTop(polyline, 0);
+            Canvas.SetLeft(polyline, 0);
+            drawingCanvas.Children.Add(polyline);
+        }
+
+        private void ShowIntegrationResult(double x0, double x1, double maxY, double minY)
+        {
+            Math.Round(Integrator.Integrate(x0, x1, N), 4);
+            if (Integrator is MonteCarloIntegrator)
+                DrawMonteCarlo(x0, x1, maxY, minY);
+        }
+
+        // If you want to draw points in Monte Carlo.
+        private void DrawMonteCarlo(double x0, double x1, double maxY, double minY)
+        {
+            Brush brushPositive = new SolidColorBrush(Colors.LightGreen);
+            Brush brushNegative = new SolidColorBrush(Colors.Crimson);
+            Brush brushLowOutside = new SolidColorBrush(Colors.Black);
+            Brush brushHighOutside = new SolidColorBrush(Colors.Ivory);
+            int pointDiamter = 2;
+
+            for (int i = 0; i < N; i++)
+            {
+                double randomX = RandomNumberBetween(x0, x1);
+                double chartX = randomX * Chart.Ratio.X + Chart.GraphCenter.X;
+                double randomY = RandomNumberBetween(minY, maxY);
+                double fy = -Integrator.IntegratingHandler(randomX) * Chart.Ratio.Y + Chart.GraphCenter.Y;
+
+                if (randomY > Chart.GraphCenter.Y)
+                {
+                    if (fy > randomY)
+                    {
+                        DrawCircle(chartX, randomY, brushNegative, pointDiamter);
+                    }
+                    else DrawCircle(chartX, randomY, brushLowOutside, pointDiamter);
+                }
+                else
+                {
+                    if (fy < randomY)
+                    {
+                        DrawCircle(chartX, randomY, brushPositive, pointDiamter);
+                    }
+                    else DrawCircle(chartX, randomY, brushHighOutside, pointDiamter);
+                }
+            }
+        }
+
+        private double RandomNumberBetween(double minValue, double maxValue)
+        {
+            var next = _random.NextDouble();
+            return minValue + (next * (maxValue - minValue));
+        }
+
+
+        #region With Equation class
+        //internal void DrawFunction(double x0, double x1)
+        //{
+        //    double maxY = Chart.GraphCenter.Y;
+        //    double minY = Chart.GraphCenter.Y;
+        //    for (double x = x0; x < x1; x += 0.1)
+        //    {
+        //        double y = -Integrator.IntegratingHandler(x);
+        //        DrawCircle(x * Chart.Ratio.X + Chart.GraphCenter.X,
+        //                   y * Chart.Ratio.Y + Chart.GraphCenter.Y,
+        //                   Chart.Graph.Colour, Chart.Graph.Diameter);
+        //        if (maxY < y * Chart.Ratio.Y + Chart.GraphCenter.Y)
+        //            maxY = y * Chart.Ratio.Y + Chart.GraphCenter.Y;
+        //        if (minY > y * Chart.Ratio.Y + Chart.GraphCenter.Y)
+        //            minY = y * Chart.Ratio.Y + Chart.GraphCenter.Y;
+        //    }
+        //    //ShowIntegrationResult(x0, x1, maxY, minY, eq);
+        //    ShowIntegrationResult(x0, x1, maxY, minY);
+        //}
+
+        // If you want to draw points in Monte Carlo.
+        // Draws point by point.
+        //internal void DrawFunction(double x0, double x1, Equation eq)
+        //{
+        //    double maxY = Chart.GraphCenter.Y;
+        //    double minY = Chart.GraphCenter.Y;
+        //    for (double x = x0; x < x1; x += 0.01)
+        //    {
+        //        double y = -eq.GetValue(x);
+        //        DrawCircle(x * Chart.Ratio.X + Chart.GraphCenter.X,
+        //                   y * Chart.Ratio.Y + Chart.GraphCenter.Y,
+        //                   Chart.Graph.Colour, Chart.Graph.Diameter);
+
+        //        if (maxY < y * Chart.Ratio.Y + Chart.GraphCenter.Y)
+        //            maxY = y * Chart.Ratio.Y + Chart.GraphCenter.Y;
+        //        if (minY > y * Chart.Ratio.Y + Chart.GraphCenter.Y)
+        //            minY = y * Chart.Ratio.Y + Chart.GraphCenter.Y;
+        //    }
+        //    ShowIntegrationResult(x0, x1, maxY, minY, eq);
+        //}
+
+        //private void DrawMonteCarlo(double x0, double x1, double maxY, double minY, Equation eq)
+        //{
+        //    for (int i = 0; i < N; i++)
+        //    {
+        //        double randomX = Random.NextDouble() + Random.Next((int)x0, (int)x1);
+        //        double chartX = randomX * Chart.Ratio.X + Chart.GraphCenter.X;
+        //        double randomY = Random.NextDouble() + Random.Next((int)minY, (int)maxY);
+        //        Brush brushPositive = new SolidColorBrush(Colors.LightGreen);
+        //        Brush brushNegative = new SolidColorBrush(Colors.Crimson);
+        //        Brush brushLowOutside = new SolidColorBrush(Colors.Black);
+        //        Brush brushHighOutside = new SolidColorBrush(Colors.Ivory);
+
+        //        if (randomY > Chart.GraphCenter.Y)
+        //        {
+        //            double fy = -eq.GetValue(randomX) * Chart.Ratio.Y + Chart.GraphCenter.Y;
+        //            if (fy > randomY)
+        //            {
+        //                DrawCircle(chartX, randomY, brushNegative, 2);
+        //            }
+        //            else DrawCircle(chartX, randomY, brushLowOutside, 2);
+        //        }
+        //        else
+        //        {
+        //            double fy = -eq.GetValue(randomX) * Chart.Ratio.Y + Chart.GraphCenter.Y;
+        //            if (fy < randomY)
+        //            {
+        //                DrawCircle(chartX, randomY, brushPositive, 2);
+        //            }
+        //            else DrawCircle(chartX, randomY, brushHighOutside, 2);
+        //        }
+        //    }
+        //}
+
+        //private void ShowIntegrationResult(double x0, double x1, double maxY, double minY, Equation eq)
+        //{
+        //    lblIntegrationMethod.Content = Integrator.ToString();
+        //    if (Integrator is MonteCarloIntegrator)
+        //        DrawMonteCarlo(x0, x1, maxY, minY, eq);
+        //    lblVolume.Content = Math.Round(Integrator.Integrate(x0, x1, N), 4);
+        //}
+        #endregion
+
+
+        private void DrawCircle(double xc, double yc, Brush brush, int diameter)
+        {
+            Ellipse ellipse = new Ellipse();
+            ellipse.Fill = brush;
+            ellipse.Width = diameter;
+            ellipse.Height = diameter;
+            Canvas.SetTop(ellipse, yc - (diameter / 2));
+            Canvas.SetLeft(ellipse, xc - (diameter / 2));
+            drawingCanvas.Children.Add(ellipse);
+        }
+
+
+        //private void DrawPoint(double xc, double yc, Brush brush)
+        //{
+        //    Rectangle point = new Rectangle();
+        //    point.Fill = brush;
+        //    point.Width = 1;
+        //    point.Height = 1;
+        //    Canvas.SetTop(point, yc);
+        //    Canvas.SetLeft(point, xc);
+        //    drawingCanvas.Children.Add(point);
+        //}
+
+
+        #region Draw axes
+        // TODO: fix ticks range
+        internal void DrawAxes()
+        {
+            SetXAxis();
+            SetYAxis();
+        }
+
+        private void SetXAxis()
+        {
+            Line axis = new Line(); // Draw X axis.
+            axis.X1 = 0;
+            axis.Y1 = Chart.GraphCenter.Y;
+            axis.X2 = ImageWidth;
+            axis.Y2 = Chart.GraphCenter.Y;
+            axis.Stroke = Chart.Axis.Colour;
+            axis.StrokeThickness = 1;
+            drawingCanvas.Children.Add(axis);
+            // Draw ticks for X axis.
+            for (double i = 0; i <= ImageWidth; i += Chart.Axis.TicksStepValue * Chart.Ratio.X)
+            {
+                Line tick = new Line();
+                tick.X1 = i;
+                tick.Y1 = Chart.GraphCenter.Y;
+                tick.X2 = i;
+                tick.Y2 = Chart.GraphCenter.Y - Chart.Axis.TicksLineLength;
+                tick.Stroke = Chart.Axis.Colour;
+                tick.StrokeThickness = 1;
+                drawingCanvas.Children.Add(tick);
+            }
+        }
+
+        private void SetYAxis()
+        {
+            Line axis = new Line(); // Draw Y axis.
+            axis.X1 = Chart.GraphCenter.X;
+            axis.Y1 = 0;
+            axis.X2 = Chart.GraphCenter.X;
+            axis.Y2 = ImageHeight;
+            axis.Stroke = Chart.Axis.Colour;
+            axis.StrokeThickness = 1;
+            drawingCanvas.Children.Add(axis);
+            // Draw ticks for Y axis.
+            for (double i = 0; i <= ImageHeight; i += Chart.Axis.TicksStepValue * Chart.Ratio.Y)
+            {
+                Line tick = new Line();
+                tick.X1 = Chart.GraphCenter.X;
+                tick.Y1 = i;
+                tick.X2 = Chart.GraphCenter.X + Chart.Axis.TicksLineLength;
+                tick.Y2 = i;
+                tick.Stroke = Chart.Axis.Colour;
+                tick.StrokeThickness = 1;
+                drawingCanvas.Children.Add(tick);
+            }
+        }
+        #endregion
+
+
+        #region Menu
+        private void miCreate_Click(object sender, RoutedEventArgs e)
+        {
+            CreateChartWindow w = new CreateChartWindow();
+            w.ShowDialog();
+        }
+        #endregion
+    }
+}
+
+using System.Reflection;
+using System.Resources;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Windows;
+
+// Общие сведения об этой сборке предоставляются следующим набором
+// набор атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
+// связанные со сборкой.
+[assembly: AssemblyTitle("Lab6_Integration")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Lab6_Integration")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// Установка значения False для параметра ComVisible делает типы в этой сборке невидимыми
+// для компонентов COM. Если необходимо обратиться к типу в этой сборке через
+// из модели COM, установите атрибут ComVisible для этого типа в значение true.
+[assembly: ComVisible(false)]
+
+//Чтобы начать создание локализуемых приложений, задайте
+//<UICulture>CultureYouAreCodingWith</UICulture> в файле .csproj
+//в <PropertyGroup>. Например, при использовании английского (США)
+//в своих исходных файлах установите <UICulture> в en-US.  Затем отмените преобразование в комментарий
+//атрибута NeutralResourceLanguage ниже.  Обновите "en-US" в
+//строка внизу для обеспечения соответствия настройки UICulture в файле проекта.
+
+//[assembly: NeutralResourcesLanguage("en-US", UltimateResourceFallbackLocation.Satellite)]
+
+
+[assembly: ThemeInfo(
+    ResourceDictionaryLocation.None, //где расположены словари ресурсов по конкретным тематикам
+                                     //(используется, если ресурс не найден на странице,
+                                     // или в словарях ресурсов приложения)
+    ResourceDictionaryLocation.SourceAssembly //где расположен словарь универсальных ресурсов
+                                              //(используется, если ресурс не найден на странице,
+                                              // в приложении или в каких-либо словарях ресурсов для конкретной темы)
+)]
+
+
+// Сведения о версии для сборки включают четыре следующих значения:
+//
+//      Основной номер версии
+//      Дополнительный номер версии
+//      Номер сборки
+//      Номер редакции
+//
+// Можно задать все значения или принять номера сборки и редакции по умолчанию 
+// используя "*", как показано ниже:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     Этот код был создан программным средством.
+//     Версия среды выполнения: 4.0.30319.42000
+//
+//     Изменения в этом файле могут привести к неправильному поведению и будут утрачены, если
+//     код создан повторно.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+namespace Lab6_Integration.Properties
+{
+
+
+    /// <summary>
+    ///   Класс ресурсов со строгим типом для поиска локализованных строк и пр.
+    /// </summary>
+    // Этот класс был автоматически создан при помощи StronglyTypedResourceBuilder
+    // класс с помощью таких средств, как ResGen или Visual Studio.
+    // Для добавления или удаления члена измените файл .ResX, а затем перезапустите ResGen
+    // с параметром /str или заново постройте свой VS-проект.
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    internal class Resources
+    {
+
+        private static global::System.Resources.ResourceManager resourceMan;
+
+        private static global::System.Globalization.CultureInfo resourceCulture;
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal Resources()
+        {
+        }
+
+        /// <summary>
+        ///   Возврат кэшированного экземпляра ResourceManager, используемого этим классом.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Resources.ResourceManager ResourceManager
+        {
+            get
+            {
+                if ((resourceMan == null))
+                {
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Lab6_Integration.Properties.Resources", typeof(Resources).Assembly);
+                    resourceMan = temp;
+                }
+                return resourceMan;
+            }
+        }
+
+        /// <summary>
+        ///   Переопределяет свойство CurrentUICulture текущего потока для всех
+        ///   подстановки ресурсов с помощью этого класса ресурсов со строгим типом.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Globalization.CultureInfo Culture
+        {
+            get
+            {
+                return resourceCulture;
+            }
+            set
+            {
+                resourceCulture = value;
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//     Runtime Version:4.0.30319.42000
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+namespace Lab6_Integration.Properties
+{
+
+
+    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "11.0.0.0")]
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase
+    {
+
+        private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
+
+        public static Settings Default
+        {
+            get
+            {
+                return defaultInstance;
+            }
+        }
+    }
+}
+

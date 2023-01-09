@@ -40,7 +40,7 @@
             <label>Name:</label>
         </div>
         <div class="form-floating" style="margin:10px">
-            <InputText id="name" @bind-Value="_model.Name" />
+            <InputText id="name" @bind-Value="_model.FileName" />
         </div>
 
         <div>
@@ -154,7 +154,7 @@ else
     {
         if (project != null)
         {
-            _model.Name = project.Name;
+            _model.FileName = project.Name;
             _model.GitUrl = project.GitUrl;
             _model.PathOnDisc = project.PathOnDisc;
             _model.SelectedStudentId = project.StudentId;
@@ -174,7 +174,7 @@ else
     {
         if (project != null && students != null && projectTypes != null)
         {
-            project.Name = _model.Name;
+            project.Name = _model.FileName;
             project.GitUrl = _model.GitUrl;
             project.PathOnDisc = _model.PathOnDisc;
             project.Student = null;

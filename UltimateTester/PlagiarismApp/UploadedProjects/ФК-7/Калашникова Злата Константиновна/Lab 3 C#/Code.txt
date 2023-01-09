@@ -1,0 +1,691 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab7ClassLibrary
+{
+    public class Alphabet
+    {
+        string _characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        public char GetAlpha(int n)
+        {
+            if (n < 1 || n > 26)
+                throw new ArgumentException();
+            return _characters[n - 1];
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+
+namespace Lab7ClassLibrary
+{
+    public class Email
+    {
+        private string _emailPattern =
+            @"^[a-zA-Z][a-zA-Z0-9\-_+.]{0,254}\@(([a-zA-Z][a-zA-Z0-9\-]{0,}))(\.[a-zA-Z]{2,})+$";
+
+        private Regex _regex;
+
+        public Email()
+        {
+            _regex = new Regex(_emailPattern);
+        }
+
+        public bool IsCorrect(string email)
+        {
+            if (_regex.IsMatch(email))
+                return true;
+            else throw new ArgumentException();
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab7ClassLibrary
+{
+    public class PositiveNumber
+    {
+        public int Sum(string number)
+        {
+            int sum = 0;
+            for (int i = 0; i < number.Length; i++)
+            {
+                if (char.IsDigit(number[i]))
+                {
+                    sum += ToInt(number[i]);
+                }
+                else throw new ArgumentException();
+            }
+            return sum;
+        }
+
+        private int ToInt(char c)
+        {
+            return (c - '0');
+        }
+    }
+}
+
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+// Общие сведения об этой сборке предоставляются следующим набором
+// набора атрибутов. Измените значения этих атрибутов для изменения сведений,
+// связанные со сборкой.
+[assembly: AssemblyTitle("Lab7ClassLibrary")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Lab7ClassLibrary")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// Установка значения False для параметра ComVisible делает типы в этой сборке невидимыми
+// для компонентов COM. Если необходимо обратиться к типу в этой сборке через
+// COM, задайте атрибуту ComVisible значение TRUE для этого типа.
+[assembly: ComVisible(false)]
+
+// Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
+[assembly: Guid("8feb29fd-fb35-4c3c-901c-f55cb24bf387")]
+
+// Сведения о версии сборки состоят из указанных ниже четырех значений:
+//
+//      Основной номер версии
+//      Дополнительный номер версии
+//      Номер сборки
+//      Редакция
+//
+// Можно задать все значения или принять номера сборки и редакции по умолчанию 
+// используя "*", как показано ниже:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab7ClassLibrary
+{
+    public class QuadricEquation
+    {
+        public double[] GetRoots(double a, double b, double c)
+        {
+            double[] result = null;
+            // ax^2+bx+c=0
+            if (a != 0 && b != 0 && c != 0) // if it is a complete equation
+            {
+                double D = b * b - 4 * a * c;
+                if (D > 0) // 2 roots
+                {
+                    double x1 = (-b + D) / 2 * a;
+                    double x2 = (-b - D) / 2 * a;
+                    result = new double[]{ x1, x2 };
+                    return result;
+                }
+                else if (D < 0) // 0 roots
+                {
+                    throw new ArgumentException();
+                }
+                else if (D == 0) // 1 root
+                {
+                    double x1 = (-b + D) / 2 * a;
+                    result = new double[] { x1 };
+                    return result;
+                }
+            }
+            // ax^2+bx=0
+            else if (a != 0 && b != 0 && c == 0) // if it's an incomplete equation
+            {
+                double x1 = 0;
+                double x2 = -b / a;
+                result = new double[] { x1, x2 };
+                return result;
+            }
+            // ax^2+c=0
+            else if (a != 0 && b == 0 && c != 0)
+            {
+                if (a * c < 0)
+                {
+                    c = -c;
+                    double x1 = -Math.Sqrt(c);
+                    double x2 = Math.Sqrt(c);
+                    result = new double[] { x1, x2 };
+                    return result;
+                }
+                //else return result;
+            }
+            // ax^2=0
+            //else if (a != 0 && b == 0 && c == 0)
+            //{
+            //    result = new double[] { 0 };
+            //    return result;
+            //}
+            throw new ArgumentException();
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab7ClassLibrary
+{
+    public class Year
+    {
+        public int GetDays(int year)
+        {
+            if (year < 1)
+                throw new ArgumentException();
+            if (year % 400 == 0)
+                return 366;
+            else if (year % 100 == 0)
+                return 365;
+            else if (year % 4 == 0)
+                return 366;
+            else
+                return 365;
+        }
+    }
+}
+
+using Lab7ClassLibrary;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+
+namespace Lab7ClassLibraryTests
+{
+    [TestClass]
+    public class AlphabetTests
+    {
+        [TestMethod]
+        public void GetAlphaTest()
+        {
+            int a = 1;
+            int a2 = 5;
+            int a3 = 26;
+            char expected = 'A';
+            char expected2 = 'E';
+            char expected3 = 'Z';
+
+            Alphabet alphabet = new Alphabet();
+            char actual = alphabet.GetAlpha(a);
+            char actual2 = alphabet.GetAlpha(a2);
+            char actual3 = alphabet.GetAlpha(a3);
+
+            Assert.AreEqual(expected, actual);
+            Assert.AreEqual(expected2, actual2);
+            Assert.AreEqual(expected3, actual3);
+        }
+
+        [TestMethod]
+        public void GetAlphaInvalidDataTest()
+        {
+            int a = 0;
+            int a2 = -5;
+            int a3 = 27;
+            Alphabet alphabet = new Alphabet();
+
+            Assert.ThrowsException<ArgumentException>(() =>
+                alphabet.GetAlpha(a));
+            Assert.ThrowsException<ArgumentException>(() =>
+                alphabet.GetAlpha(a2));
+            Assert.ThrowsException<ArgumentException>(() =>
+                alphabet.GetAlpha(a3));
+        }
+    }
+}
+
+using Lab7ClassLibrary;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+
+namespace Lab7ClassLibraryTests
+{
+    [TestClass]
+    public class EmailTests
+    {
+        [TestMethod]
+        public void CheckTest()
+        {
+            Email em = new Email();
+            string email = "test@test.test";
+            bool expected = true;
+            bool actual = em.IsCorrect(email);
+            Assert.AreEqual(expected, actual);
+
+            string email2 = "firstname.lastname@example.com";
+            bool actual2 = em.IsCorrect(email2);
+            Assert.AreEqual(expected, actual2);
+
+            string email3 = "he-hm@n05mail.dd";
+            bool actual3 = em.IsCorrect(email3);
+            Assert.AreEqual(expected, actual3);
+        }
+
+        [TestMethod]
+        public void CheckInvalidDataTest()
+        {
+            Email em = new Email();
+            string email = "tef@stf@test.tes";
+            Assert.ThrowsException<ArgumentException>(() => em.IsCorrect(email));
+            string email2 = "a@b!ds.cf";
+            Assert.ThrowsException<ArgumentException>(() => em.IsCorrect(email2));
+            string email3 = "joen[]otok@sixpack.com";
+            Assert.ThrowsException<ArgumentException>(() => em.IsCorrect(email3));
+            string email4 = "a@b.c";
+            Assert.ThrowsException<ArgumentException>(() => em.IsCorrect(email4));
+            string email5 = "@jungle.org";
+            Assert.ThrowsException<ArgumentException>(() => em.IsCorrect(email5));
+            string email6 = "ddfhgdsfgd6fgsdfg6sdfg6sdfg57sdfg54sgs65dfg4sd6h" +
+                "fg4sd6gsdgsdfg4sdfg4sggsdg4dsg4ds4gg54sdg4sdgsdg4sdf6gsdfgdf" +
+                "gewr76wer6wer6wersd6f5s6f5sd6f5sd6f5sd6f5s6df5sd6f2yu34tyu23" +
+                "4t2u3y4t23uy4t23u4y234g234f23gh4f23hg23f4hg23f42h3g4fh23f4h2" +
+                "34fh23gf423hg4f23hgf423ghf423hg@mail.ru"; // too long
+            Assert.ThrowsException<ArgumentException>(() => em.IsCorrect(email6));
+            string email7 = "zeus!deusnotok@gmail.com";
+            Assert.ThrowsException<ArgumentException>(() => em.IsCorrect(email7));
+            string email8 = "<joenotok@sixpack.com";
+            Assert.ThrowsException<ArgumentException>(() => em.IsCorrect(email8));
+            string email9 = "notok@mail.example.com:joe@sixpack.com";
+            Assert.ThrowsException<ArgumentException>(() => em.IsCorrect(email9));
+            
+        }
+    }
+}
+
+using Lab7ClassLibrary;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+namespace Lab7ClassLibraryTests
+{
+    [TestClass]
+    public class PositiveNumberTests
+    {
+        [TestMethod]
+        public void SumTest()
+        {
+            PositiveNumber pn = new PositiveNumber();
+            string test = "123";
+            string test2 = "55551";
+            int expected = 6;
+            int expected2 = 21;
+
+            int actual = pn.Sum(test);
+            Assert.AreEqual(expected, actual);
+            int actual2 = pn.Sum(test2);
+            Assert.AreEqual(expected2, actual2);
+        }
+
+        [TestMethod]
+        public void SumInvalidDataTest()
+        {
+            PositiveNumber pn = new PositiveNumber();
+            string test = ".123";
+            string test2 = "555d51";
+
+            Assert.ThrowsException<ArgumentException>(() =>
+                pn.Sum(test));
+            Assert.ThrowsException<ArgumentException>(() =>
+                pn.Sum(test2));
+        }
+    }
+}
+
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+[assembly: AssemblyTitle("Lab7ClassLibraryTests")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Lab7ClassLibraryTests")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+[assembly: ComVisible(false)]
+
+[assembly: Guid("3b170935-4325-4d7e-8bfd-76017e7f2510")]
+
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+
+using Lab7ClassLibrary;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+
+namespace Lab7ClassLibraryTests
+{
+    [TestClass]
+    public class QuadricEquationTests
+    {
+        [TestMethod]
+        public void GetRootsTest()
+        {
+            QuadricEquation qe = new QuadricEquation();
+            double precision = 0.01;
+            double a = 1;
+            double b = -5;
+            double c = 6;
+            double[] expected = { 3, 2 };
+            double a2 = 1;
+            double b2 = -10;
+            double c2 = 25;
+            double[] expected2 = { 5 };
+            double a3 = 1;
+            double b3 = -3;
+            double c3 = 0;
+            double[] expected3 = { 0, 3 };
+            double a4 = 1;
+            double b4 = 0;
+            double c4 = -6;
+            double[] expected4 = { -Math.Sqrt(6), Math.Sqrt(6) };
+
+            double[] actual = qe.GetRoots(a, b, c);
+            double[] actual2 = qe.GetRoots(a2, b2, c2);
+            double[] actual3 = qe.GetRoots(a3, b3, c3);
+            double[] actual4 = qe.GetRoots(a4, b4, c4);
+            // 1
+            Assert.AreEqual(expected[0], actual[0], precision);
+            Assert.AreEqual(expected[1], actual[1], precision);
+            // 2
+            Assert.AreEqual(expected2[0], actual2[0], precision);
+            // 3
+            Assert.AreEqual(expected3[0], actual3[0], precision);
+            Assert.AreEqual(expected3[1], actual3[1], precision);
+            // 4
+            Assert.AreEqual(expected4[0], actual4[0], precision);
+            Assert.AreEqual(expected4[1], actual4[1], precision);
+            
+        }
+
+        [TestMethod]
+        public void GetRootsInvalidDataTest()
+        {
+            QuadricEquation qe = new QuadricEquation();
+            double a3 = 1;
+            double b3 = -5;
+            double c3 = 7;
+            //double[] expected3 = null;
+            double a6 = 2;
+            double b6 = 0;
+            double c6 = 6;
+            //double[] expected6 = null;
+            // 3
+            Assert.ThrowsException<ArgumentException>(() =>
+                qe.GetRoots(a3, b3, c3));
+            //Assert.AreEqual(expected3, actual3);
+            // 6
+            Assert.ThrowsException<ArgumentException>(() =>
+                qe.GetRoots(a6, b6, c6));
+            //Assert.AreEqual(expected6, actual6);
+        }
+    }
+}
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using Lab6_Integration.Integration;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab7ClassLibraryTests
+{
+    [TestClass]
+    public class SimpsonIntegratorTests
+    {
+        [TestMethod]
+        public void IntegrateTest()
+        {
+            double precision = 0.01;
+            SimpsonIntegrator si = new SimpsonIntegrator();
+            si.IntegratingHandler += TestFunction;
+            double x0 = 0;
+            double x1 = 5;
+            int n = 100;
+
+            double expected = 43.296;
+            double actual = si.Integrate(x0, x1, n);
+            Assert.AreEqual(expected, actual, precision);
+        }
+
+        [TestMethod]
+        public void IntegrateInvalidDataTest()
+        {
+            //double precision = 0.01;
+            SimpsonIntegrator si = new SimpsonIntegrator();
+            si.IntegratingHandler += TestFunction;
+
+            double x0 = 0;
+            double x1 = 5;
+            int n = 99;
+            Assert.ThrowsException<ArgumentException>(() =>
+                si.Integrate(x0, x1, n));
+            double x02 = 5;
+            double x12 = 0;
+            int n2 = 50;
+            Assert.ThrowsException<ArgumentException>(() =>
+                si.Integrate(x02, x12, n2));
+            double x03 = 5;
+            double x13 = 0;
+            int n3 = -50;
+            Assert.ThrowsException<ArgumentException>(() =>
+                si.Integrate(x03, x13, n3));
+        }
+
+
+        private double TestFunction(double x)
+        {
+            return 5 * x * Math.Abs(Math.Sin(x));
+        }
+    }
+}
+
+using Lab7ClassLibrary;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+
+namespace Lab7ClassLibraryTests
+{
+    [TestClass]
+    public class YearTests
+    {
+        [TestMethod]
+        public void GetDaysTest()
+        {
+            Year y = new Year();
+            int year = 1;
+            int year2 = 4;
+            int year3 = 200;
+            int year4 = 800;
+            int year5 = 900;
+            int year6 = Int32.MaxValue;
+            int expectedNotLeap = 365;
+            int expectedLeap = 366;
+
+            int actual = y.GetDays(year);
+            Assert.AreEqual(expectedNotLeap, actual);
+            int actual2 = y.GetDays(year2);
+            Assert.AreEqual(expectedLeap, actual2);
+            int actual3 = y.GetDays(year3);
+            Assert.AreEqual(expectedNotLeap, actual3);
+            int actual4 = y.GetDays(year4);
+            Assert.AreEqual(expectedLeap, actual4);
+            int actual5 = y.GetDays(year5);
+            Assert.AreEqual(expectedNotLeap, actual5);
+            int actual6 = y.GetDays(year6);
+            Assert.AreEqual(expectedNotLeap, actual6);
+        }
+
+        [TestMethod]
+        public void GetDaysInvalidDataTest()
+        {
+            Year y = new Year();
+            int year = 0;
+            int year2 = -5;
+            int year3 = Int32.MinValue;
+
+            Assert.ThrowsException<ArgumentException>(() =>
+                y.GetDays(year));
+            Assert.ThrowsException<ArgumentException>(() =>
+                y.GetDays(year2));
+            Assert.ThrowsException<ArgumentException>(() =>
+                y.GetDays(year3));
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MathTaskClassLibrary
+{
+    public class Geometry
+    {
+        public int RectangleArea(int a, int b)
+        {
+            if (a < 0 || b < 0)
+                throw new ArgumentException();
+            return a * b;
+        }
+    }
+}
+
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+// Общие сведения об этой сборке предоставляются следующим набором
+// набора атрибутов. Измените значения этих атрибутов для изменения сведений,
+// связанные со сборкой.
+[assembly: AssemblyTitle("MathTaskClassLibrary")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("MathTaskClassLibrary")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// Установка значения False для параметра ComVisible делает типы в этой сборке невидимыми
+// для компонентов COM. Если необходимо обратиться к типу в этой сборке через
+// COM, задайте атрибуту ComVisible значение TRUE для этого типа.
+[assembly: ComVisible(false)]
+
+// Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
+[assembly: Guid("f464edd8-d613-4463-b304-9ced919dfd58")]
+
+// Сведения о версии сборки состоят из указанных ниже четырех значений:
+//
+//      Основной номер версии
+//      Дополнительный номер версии
+//      Номер сборки
+//      Редакция
+//
+// Можно задать все значения или принять номера сборки и редакции по умолчанию 
+// используя "*", как показано ниже:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+
+using MathTaskClassLibrary;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+
+namespace MathTaskClassLibraryTests
+{
+    [TestClass]
+    public class GeometryTests
+    {
+        [TestMethod]
+        public void RectangleAreaTest()
+        {
+            int a = 3;
+            int b = 4;
+            int expected = 12;
+
+            Geometry geometry = new Geometry();
+            int actual = geometry.RectangleArea(a, b);
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void RectangleAreaInvalidDataTest1()
+        {
+            bool catched = false;
+            try
+            {
+                int a = -4;
+                int b = 10;
+
+                Geometry geometry = new Geometry();
+                geometry.RectangleArea(a, b);
+            }
+            catch (ArgumentException ex)
+            {
+                catched = true;
+            }
+            Assert.IsTrue(catched, "invalid data not processed");
+        }
+
+        [TestMethod]
+        public void RectangleAreaInvalidDataTest2()
+        {
+            int a = -4;
+            int b = 10;
+            Geometry geometry = new Geometry();
+            Assert.ThrowsException<ArgumentException>(() =>
+                geometry.RectangleArea(a, b));
+        }
+    }
+}
+
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+[assembly: AssemblyTitle("MathTaskClassLibraryTests")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("MathTaskClassLibraryTests")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+[assembly: ComVisible(false)]
+
+[assembly: Guid("69ed7697-6103-42de-8d43-61bc445a2ff2")]
+
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+

@@ -1,0 +1,1956 @@
+using System.Drawing;
+
+namespace Lab3_Paint
+{
+    abstract class Brush
+    {
+        public Color BrushColour { get; set; }
+
+        public int Size { get; set; }
+
+        public Brush(Color brushColour, int size)
+        {
+            BrushColour = brushColour;
+            Size = size;
+        }
+
+        public abstract void Draw(Bitmap image, int x, int y);
+
+        protected void SetPixel(int x, int y, Bitmap image)
+        {
+            if (!(x < 0 || y < 0) && (x < image.Width && y < image.Height))
+                image.SetPixel(x, y, BrushColour);
+        }
+    }
+}
+
+using System;
+using System.Drawing;
+
+namespace Lab3_Paint
+{
+    internal class CircleBrush : Brush
+    {
+        public CircleBrush(Color brushColour, int size) : base(brushColour, size) { }
+
+        public override void Draw(Bitmap image, int xc, int yc)
+        {
+            for (int x = xc - Size; x <= xc + Size; x++)
+                for (int y = yc - Size; y <= yc + Size; y++)
+                {
+                    double distance = Math.Sqrt(Math.Pow(x - xc, 2) + Math.Pow(y - yc, 2));
+
+                    if (Size >= distance)
+                        SetPixel(x, y, image);
+                }
+        }
+    }
+}
+
+using System;
+using System.Drawing;
+
+namespace Lab3_Paint
+{
+    internal class CircleSprayBrush : Brush
+    {
+        private readonly Random _random;
+
+        private int _diameter;
+
+        public CircleSprayBrush(Color brushColour, int size) : base(brushColour, size)
+        {
+            _diameter = size * 2;
+            _random = new Random();
+        }
+
+        public override void Draw(Bitmap image, int xc, int yc)
+        {
+            int xMin = xc - Size;
+            int xMax = xc + Size;
+            int yMin = yc - Size;
+            int yMax = yc + Size;
+            int iterations = (int)(_diameter / Math.E);
+
+            for (int i = 0; i < iterations; i++)
+            {
+                int x = _random.Next(xMin, xMax);
+                int y = _random.Next(yMin, yMax);
+
+                double distance = Math.Sqrt(Math.Pow(x - xc, 2) + Math.Pow(y - yc, 2));
+
+                if (Size >= distance)
+                    SetPixel(x, y, image);
+            }
+        }
+    }
+}
+
+using System.Drawing;
+
+namespace Lab3_Paint
+{
+    internal class CircumferenceBrush : Brush
+    {
+        private int _diameter;
+
+        public CircumferenceBrush(Color brushColour, int size) : base(brushColour, size)
+        {
+            _diameter = 3 - 2 * size;
+        }
+
+        // Bresenham's algorithm
+        public override void Draw(Bitmap image, int xc, int yc)
+        {
+            int x = 0;
+            int y = Size;
+
+            DrawPixels(image, xc, yc, x, y);
+            while (x <= y)
+            {
+                if (_diameter <= 0)
+                {
+                    _diameter += (4 * x) + 6;
+                }
+                else
+                {
+                    _diameter += (4 * x) - (4 * y) + 10;
+                    y--;
+                }
+                x++;
+                DrawPixels(image, xc, yc, x, y);
+            }
+        }
+
+        private void DrawPixels(Bitmap image, int xc, int yc, int x, int y)
+        {
+            SetPixel(x + xc, y + yc, image);
+            SetPixel(x + xc, -y + yc, image);
+            SetPixel(-x + xc, -y + yc, image);
+            SetPixel(-x + xc, y + yc, image);
+            SetPixel(y + xc, x + yc, image);
+            SetPixel(y + xc, -x + yc, image);
+            SetPixel(-y + xc, -x + yc, image);
+            SetPixel(-y + xc, x + yc, image);
+        }
+    }
+}
+
+using System.Drawing;
+
+namespace Lab3_Paint
+{
+    internal class Eraser : Brush
+    {
+        public Eraser(Color brushColour, int size) : base(brushColour, size) 
+        {
+            BrushColour = Color.White;
+        }
+
+        public override void Draw(Bitmap image, int x, int y)
+        {
+            for (int y0 = y - Size; y0 < y + Size; ++y0)
+                for (int x0 = x - Size; x0 < x + Size; ++x0)
+                    SetPixel(x0, y0, image);
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab3_Paint
+{
+    //  6:  p = 3 sqrt (cos(3 fi) )
+    internal class FlowerBrush : Brush
+    {
+        public FlowerBrush(Color brushColour, int size) : base(brushColour, size) { }
+
+        public override void Draw(Bitmap image, int xc, int yc)
+        {
+            double hypotenuse;
+            int newX, newY;
+            int coefficient = Size * 3;
+
+            for (double fi = 0; fi <= 720; fi += 0.1)
+            {
+                hypotenuse = coefficient * Math.Sqrt(Math.Abs(Math.Cos(3 * fi)));
+                newX = (int)(xc + Math.Cos(fi) * hypotenuse);
+                newY = (int)(yc + Math.Sin(fi) * hypotenuse);
+
+                SetPixel(newX, newY, image);
+            }
+        }
+    }
+}
+
+using System.Drawing;
+
+namespace Lab3_Paint
+{
+    internal class QuadBrush : Brush
+    {
+        public QuadBrush(Color brushColour, int size) : base(brushColour, size) { }
+
+        public override void Draw(Bitmap image, int x, int y)
+        {
+            for (int y0 = y - Size; y0 < y + Size; ++y0)
+                for (int x0 = x - Size; x0 < x + Size; ++x0)
+                    SetPixel(x0, y0, image);
+        }
+    }
+}
+
+using System.Drawing;
+
+namespace Lab3_Paint
+{
+    internal class SnowflakeBrush : Brush
+    {
+        private int _diameter;
+
+        public SnowflakeBrush(Color brushColour, int size) : base(brushColour, size)
+        {
+            _diameter = size * 2; 
+        }
+
+        public override void Draw(Bitmap image, int xc, int yc)
+        {
+            // Vertical line.
+            int y = yc - Size;
+            for (; y <= yc + Size; y++)
+            {
+                SetPixel(xc, y, image);
+            }
+
+            // Horizontal line.
+            int x = xc - Size;
+            for (; x <= xc + Size; x++)
+            {
+                SetPixel(x, yc, image);
+            }
+
+            // Diagonal lines.
+            x = xc - Size;
+            y = yc + Size;
+            for (int i = 0; i < _diameter; i++)
+            {
+                SetPixel(x++, y--, image);
+            }
+
+            x = xc + Size;
+            y = yc + Size;
+            for (int i = 0; i < _diameter; i++)
+            {
+                SetPixel(x--, y--, image);
+            }
+        }
+    }
+}
+
+using System;
+using System.Drawing;
+
+namespace Lab3_Paint
+{
+    internal class SquareSprayBrush : Brush
+    {
+        private readonly Random _random;
+
+        private int _diameter;
+
+        public SquareSprayBrush(Color brushColour, int size) : base(brushColour, size)
+        {
+            _diameter = size * 2;
+            _random = new Random();
+        }
+
+        public override void Draw(Bitmap image, int xc, int yc)
+        {
+            int xMin = xc - Size;
+            int xMax = xc + Size;
+            int yMin = yc - Size;
+            int yMax = yc + Size;
+            int iterations = (int) (_diameter / Math.E);
+
+            for (int i = 0; i < iterations; i++)
+            {
+                SetPixel(_random.Next(xMin, xMax),
+                               _random.Next(yMin, yMax),
+                               image);
+            }
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Lab3_Paint
+{
+    public partial class CreateImageForm : Form
+    {
+        bool _canceled = true;
+        public bool Canceled
+        {
+            get
+            {
+                return _canceled;
+            }
+        }
+
+        public string FileName
+        {
+            get
+            {
+                return txtFileName.Text;
+            }
+        }
+
+        public int W
+        { 
+            get
+            {
+                string text = txtWidth.Text;
+                //int value = Convert.ToInt32(text);
+                int value;
+                Int32.TryParse(text, out value);
+                return value;
+            }
+        }
+
+        public int H
+        {
+            get
+            {
+                string text = txtHeight.Text;
+                //int value = Convert.ToInt32(text);
+                int value;
+                Int32.TryParse(text, out value);
+                return value;
+            }
+        }
+
+        FlowLayoutPanel _mainPanel = new FlowLayoutPanel()
+        {
+            Anchor = AnchorStyles.None,
+        };
+
+        TableLayoutPanel _tableLayoutPanel = new TableLayoutPanel()
+        {
+            RowCount = 5,
+            ColumnCount = 2,
+        };
+
+        public CreateImageForm()
+        {
+            InitializeComponent();
+            InitializeControls();
+        }
+
+        private void InitializeControls()
+        {
+            _mainPanel.Controls.Add(_tableLayoutPanel);
+
+            CreateLayoutMatrixStyles();
+            SetLabelStyles();
+            AddControls();
+
+            Controls.Add(_mainPanel);
+        }
+
+        private void CreateLayoutMatrixStyles()
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                _tableLayoutPanel.RowStyles.Add(new RowStyle());
+                _tableLayoutPanel.RowStyles[i].SizeType = SizeType.Percent;
+                _tableLayoutPanel.RowStyles[i].Height = 30;
+            }
+            for (int i = 0; i < 2; i++)
+            {
+                _tableLayoutPanel.ColumnStyles.Add(new ColumnStyle());
+                _tableLayoutPanel.ColumnStyles[i].SizeType = SizeType.Percent;
+                _tableLayoutPanel.ColumnStyles[i].Width = 30;
+            }
+        }
+
+        private void SetLabelStyles()
+        {
+            lblFileName.TextAlign = ContentAlignment.MiddleCenter;
+            lblFileName.Anchor = (AnchorStyles.Bottom | AnchorStyles.Top | AnchorStyles.Right);
+            lblWidth.TextAlign = ContentAlignment.MiddleCenter;
+            lblWidth.Anchor = (AnchorStyles.Bottom | AnchorStyles.Top | AnchorStyles.Right);
+            lblHeight.TextAlign = ContentAlignment.MiddleCenter;
+            lblHeight.Anchor = (AnchorStyles.Bottom | AnchorStyles.Top | AnchorStyles.Right);
+        }
+
+        private void AddControls()
+        {
+            _tableLayoutPanel.Controls.Add(lblFileName, 0, 0);
+            _tableLayoutPanel.Controls.Add(lblWidth, 0, 1);
+            _tableLayoutPanel.Controls.Add(lblHeight, 0, 2);
+            _tableLayoutPanel.Controls.Add(txtFileName, 1, 0);
+            _tableLayoutPanel.Controls.Add(txtWidth, 1, 1);
+            _tableLayoutPanel.Controls.Add(txtHeight, 1, 2);
+            _tableLayoutPanel.Controls.Add(btnOK, 0, 3);
+            _tableLayoutPanel.Controls.Add(btnCancel, 1, 3);
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            _canceled = true;
+            Close();
+        }
+
+        private void btnOK_Click(object sender, EventArgs e)
+        {
+            _canceled = false;
+            Close();
+            Lab3_Paint.Paint.FileName = FileName;
+        }
+    }
+}
+
+namespace Lab3_Paint
+{
+    partial class CreateImageForm
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.btnOK = new System.Windows.Forms.Button();
+            this.btnCancel = new System.Windows.Forms.Button();
+            this.txtHeight = new System.Windows.Forms.TextBox();
+            this.txtFileName = new System.Windows.Forms.TextBox();
+            this.txtWidth = new System.Windows.Forms.TextBox();
+            this.lblFileName = new System.Windows.Forms.Label();
+            this.lblWidth = new System.Windows.Forms.Label();
+            this.lblHeight = new System.Windows.Forms.Label();
+            this.SuspendLayout();
+            // 
+            // btnOK
+            // 
+            this.btnOK.Location = new System.Drawing.Point(12, 96);
+            this.btnOK.Name = "btnOK";
+            this.btnOK.Size = new System.Drawing.Size(75, 23);
+            this.btnOK.TabIndex = 0;
+            this.btnOK.Text = "OK";
+            this.btnOK.UseVisualStyleBackColor = true;
+            this.btnOK.Click += new System.EventHandler(this.btnOK_Click);
+            // 
+            // btnCancel
+            // 
+            this.btnCancel.Location = new System.Drawing.Point(92, 96);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(75, 23);
+            this.btnCancel.TabIndex = 1;
+            this.btnCancel.Text = "Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            // 
+            // txtHeight
+            // 
+            this.txtHeight.Location = new System.Drawing.Point(85, 70);
+            this.txtHeight.Name = "txtHeight";
+            this.txtHeight.Size = new System.Drawing.Size(100, 20);
+            this.txtHeight.TabIndex = 2;
+            // 
+            // txtFileName
+            // 
+            this.txtFileName.Location = new System.Drawing.Point(92, 12);
+            this.txtFileName.Name = "txtFileName";
+            this.txtFileName.Size = new System.Drawing.Size(100, 20);
+            this.txtFileName.TabIndex = 3;
+            // 
+            // txtWidth
+            // 
+            this.txtWidth.Location = new System.Drawing.Point(92, 38);
+            this.txtWidth.Name = "txtWidth";
+            this.txtWidth.Size = new System.Drawing.Size(100, 20);
+            this.txtWidth.TabIndex = 4;
+            // 
+            // lblFileName
+            // 
+            this.lblFileName.AutoSize = true;
+            this.lblFileName.Location = new System.Drawing.Point(24, 23);
+            this.lblFileName.Name = "lblFileName";
+            this.lblFileName.Size = new System.Drawing.Size(55, 13);
+            this.lblFileName.TabIndex = 5;
+            this.lblFileName.Text = "File name:";
+            // 
+            // lblWidth
+            // 
+            this.lblWidth.AutoSize = true;
+            this.lblWidth.Location = new System.Drawing.Point(41, 45);
+            this.lblWidth.Name = "lblWidth";
+            this.lblWidth.Size = new System.Drawing.Size(38, 13);
+            this.lblWidth.TabIndex = 6;
+            this.lblWidth.Text = "Width:";
+            // 
+            // lblHeight
+            // 
+            this.lblHeight.AutoSize = true;
+            this.lblHeight.Location = new System.Drawing.Point(24, 70);
+            this.lblHeight.Name = "lblHeight";
+            this.lblHeight.Size = new System.Drawing.Size(41, 13);
+            this.lblHeight.TabIndex = 7;
+            this.lblHeight.Text = "Height:";
+            // 
+            // CreateImageForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(209, 121);
+            this.Controls.Add(this.lblHeight);
+            this.Controls.Add(this.lblWidth);
+            this.Controls.Add(this.lblFileName);
+            this.Controls.Add(this.txtWidth);
+            this.Controls.Add(this.txtFileName);
+            this.Controls.Add(this.txtHeight);
+            this.Controls.Add(this.btnCancel);
+            this.Controls.Add(this.btnOK);
+            this.MaximumSize = new System.Drawing.Size(300, 400);
+            this.MinimumSize = new System.Drawing.Size(225, 160);
+            this.Name = "CreateImageForm";
+            this.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.Text = "Image Creation";
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
+        }
+
+        #endregion
+
+        private System.Windows.Forms.Button btnOK;
+        private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.TextBox txtHeight;
+        private System.Windows.Forms.TextBox txtFileName;
+        private System.Windows.Forms.TextBox txtWidth;
+        private System.Windows.Forms.Label lblFileName;
+        private System.Windows.Forms.Label lblWidth;
+        private System.Windows.Forms.Label lblHeight;
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Lab3_Paint
+{
+    public partial class Paint : Form
+    {
+        public static string FileName { get; set; } = "NoImageName";
+
+        // Blank image colour.
+        Color _defaultColour => Color.White;
+
+        int _x;
+        int _y;
+        bool _mouseClicked = false;
+
+        // Drawing brush colour.
+        Color _selectedColour => colorDialog1.Color;
+
+        int SelectedSize
+        {
+            get { return brushSizeTrackBar.Value; }
+            set { brushSizeTrackBar.Value = value; }
+        }
+        Brush _selectedBrush;
+
+        public Paint()
+        {
+            InitializeComponent();
+            InitializePalette();
+            CreateBlankImage(800, 600);
+        }
+
+        private void CreateBlankImage(int width, int height)
+        {
+            var oldImage = pictureBox1.Image;
+
+            if (width < 1 || height < 1) 
+                MessageBox.Show("The image is too small.", "Error");
+            else if (width > 4000 || height > 4000)
+                MessageBox.Show("The image is too large.", "Error");
+            else if (width > 0 && height > 0)
+            {
+                var bmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+
+                for (int i = 0; i < width; i++)
+                    for (int j = 0; j < height; j++)
+                        bmp.SetPixel(i, j, _defaultColour);
+
+                pictureBox1.Image = bmp;
+                if (oldImage != null)
+                    oldImage.Dispose();
+            }
+        }
+
+
+        #region Brush buttons
+        private void buttonDrawSquare_Click(object sender, EventArgs e)
+        {
+            _selectedBrush = new QuadBrush(_selectedColour, SelectedSize);
+        }
+
+        private void buttonDrawCircle_Click(object sender, EventArgs e)
+        {
+            _selectedBrush = new CircleBrush(_selectedColour, SelectedSize);
+        }
+
+        private void buttonDrawCircumference_Click(object sender, EventArgs e)
+        {
+            _selectedBrush = new CircumferenceBrush(_selectedColour, SelectedSize);
+        }
+
+        private void buttonDrawSnowflake_Click(object sender, EventArgs e)
+        {
+            _selectedBrush = new SnowflakeBrush(_selectedColour, SelectedSize);
+        }
+
+        private void buttonDrawSquareSpray_Click(object sender, EventArgs e)
+        {
+            _selectedBrush = new SquareSprayBrush(_selectedColour, SelectedSize);
+        }
+
+        private void buttonCircleSprayBrush_Click(object sender, EventArgs e)
+        {
+            _selectedBrush = new CircleSprayBrush(_selectedColour, SelectedSize);
+        }
+
+        private void buttonErase_Click(object sender, EventArgs e)
+        {
+            _selectedBrush = new Eraser(_selectedColour, SelectedSize);
+        }
+
+        private void buttonDrawFlowerBrush_Click(object sender, EventArgs e)
+        {
+            _selectedBrush = new FlowerBrush(_selectedColour, SelectedSize);
+        }
+        #endregion
+
+
+        #region Picture box
+        private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
+        {
+            _mouseClicked = false;
+        }
+
+        private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (_selectedBrush == null)
+                return;
+
+            try
+            {
+                _selectedBrush.Draw(pictureBox1.Image as Bitmap, _x, _y);
+                _mouseClicked = true;
+            }
+            finally
+            {
+                pictureBox1.Refresh();
+            }
+        }
+
+        private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
+        {
+            _x = e.X > 0 ? e.X : 0;
+            _y = e.Y > 0 ? e.Y : 0;
+
+            try
+            {
+                if (_mouseClicked)
+                {
+                    _selectedBrush.Draw(pictureBox1.Image as Bitmap, _x, _y);
+                }
+            }
+            finally
+            {
+                pictureBox1.Refresh();
+            }
+        }
+        #endregion
+
+
+        private void brushSizeTrackBar_Scroll(object sender, EventArgs e)
+        {
+            SelectedSize = brushSizeTrackBar.Value;
+            if (_selectedBrush != null)
+                _selectedBrush.Size = SelectedSize;
+        }
+
+        private void newToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CreateImageForm form = new CreateImageForm();
+            form.ShowDialog();
+            if (form.Canceled == false)
+                CreateBlankImage(form.W, form.H);
+        }
+
+        private void newBlankToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CreateBlankImage(800, 600);
+        }
+
+        private void btnPickColour_Click(object sender, EventArgs e)
+        {
+            if (colorDialog1.ShowDialog() == DialogResult.OK)
+            {
+                if (_selectedBrush != null)
+                    _selectedBrush.BrushColour = colorDialog1.Color;
+                btnPickColour.BackColor = colorDialog1.Color;
+            }
+        }
+
+        private void ChangeBrushColour(object sender, EventArgs e)
+        {
+            var colour = (sender as Button).BackColor;
+            if (_selectedBrush != null)
+                _selectedBrush.BrushColour = colour;
+            btnPickColour.BackColor = colour;
+            colorDialog1.Color = colour;
+        }
+
+        private void InitializePalette()
+        {
+            btnColour1.BackColor = Color.Black;
+            btnColour5.BackColor = Color.White;
+            btnColour2.BackColor = Color.Gray;
+            btnColour6.BackColor = Color.LightGray;
+            // Red.
+            btnColour3.BackColor = Color.FromArgb(255, 25, 25);
+            btnColour7.BackColor = Color.FromArgb(255, 155, 155);
+            // Orange.
+            btnColour4.BackColor = Color.FromArgb(255, 128, 0);
+            btnColour8.BackColor = Color.FromArgb(255, 178, 102);
+            // Green.
+            btnColour9.BackColor = Color.FromArgb(25, 255, 25);
+            btnColour13.BackColor = Color.FromArgb(155, 255, 155);
+            // Cyan
+            btnColour10.BackColor = Color.FromArgb(0, 255, 255);
+            btnColour14.BackColor = Color.FromArgb(155, 255, 255);
+            // Blue
+            btnColour11.BackColor = Color.FromArgb(55, 55, 255);
+            btnColour15.BackColor = Color.FromArgb(102, 102, 255);
+            // Magenta
+            btnColour12.BackColor = Color.FromArgb(255, 0, 255);
+            btnColour16.BackColor = Color.FromArgb(255, 155, 255);
+        }
+
+        private void saveFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.Filter = "Jpeg Files|*.jpeg";
+            dialog.FileName = FileName;
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                int width = Convert.ToInt32(pictureBox1.Width);
+                int height = Convert.ToInt32(pictureBox1.Height);
+                Bitmap bmp = new Bitmap(width, height);
+                pictureBox1.DrawToBitmap(bmp, new Rectangle(0, 0, width, height));
+                bmp.Save(dialog.FileName, ImageFormat.Jpeg);
+            }
+        }
+
+        private void openFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog open = new OpenFileDialog();
+            open.Filter = "Image Files(*.jpg; *.jpeg; *.gif; *.bmp)|*.jpg; *.jpeg; *.gif; *.bmp";
+            if (open.ShowDialog() == DialogResult.OK)
+            {
+                pictureBox1.Image = new Bitmap(open.FileName);
+                FileName = open.FileName;
+            }
+        }
+    }
+}
+
+namespace Lab3_Paint
+{
+    partial class Paint
+    {
+        /// <summary>
+        /// Обязательная переменная конструктора.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Освободить все используемые ресурсы.
+        /// </summary>
+        /// <param name="disposing">истинно, если управляемый ресурс должен быть удален; иначе ложно.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Код, автоматически созданный конструктором форм Windows
+
+        /// <summary>
+        /// Требуемый метод для поддержки конструктора — не изменяйте 
+        /// содержимое этого метода с помощью редактора кода.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Paint));
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.newBlankToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolsPanel = new System.Windows.Forms.Panel();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.btnPickColour = new System.Windows.Forms.Button();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.btnColour16 = new System.Windows.Forms.Button();
+            this.btnColour15 = new System.Windows.Forms.Button();
+            this.btnColour14 = new System.Windows.Forms.Button();
+            this.btnColour13 = new System.Windows.Forms.Button();
+            this.btnColour12 = new System.Windows.Forms.Button();
+            this.btnColour11 = new System.Windows.Forms.Button();
+            this.btnColour10 = new System.Windows.Forms.Button();
+            this.btnColour9 = new System.Windows.Forms.Button();
+            this.btnColour8 = new System.Windows.Forms.Button();
+            this.btnColour7 = new System.Windows.Forms.Button();
+            this.btnColour6 = new System.Windows.Forms.Button();
+            this.btnColour5 = new System.Windows.Forms.Button();
+            this.btnColour4 = new System.Windows.Forms.Button();
+            this.btnColour3 = new System.Windows.Forms.Button();
+            this.btnColour2 = new System.Windows.Forms.Button();
+            this.btnColour1 = new System.Windows.Forms.Button();
+            this.brushSelection = new System.Windows.Forms.GroupBox();
+            this.buttonDrawFlowerBrush = new System.Windows.Forms.Button();
+            this.buttonErase = new System.Windows.Forms.Button();
+            this.buttonCircleSprayBrush = new System.Windows.Forms.Button();
+            this.buttonDrawCircle = new System.Windows.Forms.Button();
+            this.buttonDrawSquareSpray = new System.Windows.Forms.Button();
+            this.buttonDrawSnowflake = new System.Windows.Forms.Button();
+            this.buttonDrawCircumference = new System.Windows.Forms.Button();
+            this.buttonDrawSquare = new System.Windows.Forms.Button();
+            this.brushSizeTrackBar = new System.Windows.Forms.TrackBar();
+            this.drawPanel = new System.Windows.Forms.Panel();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.colorDialog1 = new System.Windows.Forms.ColorDialog();
+            this.saveFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
+            this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuStrip1.SuspendLayout();
+            this.toolsPanel.SuspendLayout();
+            this.groupBox2.SuspendLayout();
+            this.groupBox1.SuspendLayout();
+            this.brushSelection.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.brushSizeTrackBar)).BeginInit();
+            this.drawPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            this.SuspendLayout();
+            // 
+            // menuStrip1
+            // 
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileToolStripMenuItem});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Size = new System.Drawing.Size(671, 24);
+            this.menuStrip1.TabIndex = 0;
+            this.menuStrip1.Text = "menuStrip1";
+            // 
+            // fileToolStripMenuItem
+            // 
+            this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.newBlankToolStripMenuItem,
+            this.newToolStripMenuItem,
+            this.toolStripMenuItem1,
+            this.openFileToolStripMenuItem,
+            this.toolStripMenuItem2,
+            this.saveFileToolStripMenuItem});
+            this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.fileToolStripMenuItem.Text = "File";
+            // 
+            // newToolStripMenuItem
+            // 
+            this.newToolStripMenuItem.Name = "newToolStripMenuItem";
+            this.newToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.newToolStripMenuItem.Text = "Create...";
+            this.newToolStripMenuItem.Click += new System.EventHandler(this.newToolStripMenuItem_Click);
+            // 
+            // newBlankToolStripMenuItem
+            // 
+            this.newBlankToolStripMenuItem.Name = "newBlankToolStripMenuItem";
+            this.newBlankToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.newBlankToolStripMenuItem.Text = "Create a blank";
+            this.newBlankToolStripMenuItem.Click += new System.EventHandler(this.newBlankToolStripMenuItem_Click);
+            // 
+            // toolsPanel
+            // 
+            this.toolsPanel.Controls.Add(this.groupBox2);
+            this.toolsPanel.Controls.Add(this.groupBox1);
+            this.toolsPanel.Controls.Add(this.brushSelection);
+            this.toolsPanel.Dock = System.Windows.Forms.DockStyle.Right;
+            this.toolsPanel.Location = new System.Drawing.Point(550, 24);
+            this.toolsPanel.Name = "toolsPanel";
+            this.toolsPanel.Size = new System.Drawing.Size(121, 457);
+            this.toolsPanel.TabIndex = 1;
+            // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.btnPickColour);
+            this.groupBox2.Location = new System.Drawing.Point(0, 276);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(121, 44);
+            this.groupBox2.TabIndex = 3;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Current colour";
+            // 
+            // btnPickColour
+            // 
+            this.btnPickColour.BackColor = System.Drawing.Color.Black;
+            this.btnPickColour.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnPickColour.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnPickColour.Location = new System.Drawing.Point(10, 19);
+            this.btnPickColour.Name = "btnPickColour";
+            this.btnPickColour.Size = new System.Drawing.Size(98, 14);
+            this.btnPickColour.TabIndex = 1;
+            this.btnPickColour.UseVisualStyleBackColor = false;
+            this.btnPickColour.Click += new System.EventHandler(this.btnPickColour_Click);
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.btnColour16);
+            this.groupBox1.Controls.Add(this.btnColour15);
+            this.groupBox1.Controls.Add(this.btnColour14);
+            this.groupBox1.Controls.Add(this.btnColour13);
+            this.groupBox1.Controls.Add(this.btnColour12);
+            this.groupBox1.Controls.Add(this.btnColour11);
+            this.groupBox1.Controls.Add(this.btnColour10);
+            this.groupBox1.Controls.Add(this.btnColour9);
+            this.groupBox1.Controls.Add(this.btnColour8);
+            this.groupBox1.Controls.Add(this.btnColour7);
+            this.groupBox1.Controls.Add(this.btnColour6);
+            this.groupBox1.Controls.Add(this.btnColour5);
+            this.groupBox1.Controls.Add(this.btnColour4);
+            this.groupBox1.Controls.Add(this.btnColour3);
+            this.groupBox1.Controls.Add(this.btnColour2);
+            this.groupBox1.Controls.Add(this.btnColour1);
+            this.groupBox1.Location = new System.Drawing.Point(0, 326);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(118, 128);
+            this.groupBox1.TabIndex = 2;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Palette";
+            // 
+            // btnColour16
+            // 
+            this.btnColour16.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour16.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour16.Location = new System.Drawing.Point(88, 98);
+            this.btnColour16.Name = "btnColour16";
+            this.btnColour16.Size = new System.Drawing.Size(20, 20);
+            this.btnColour16.TabIndex = 15;
+            this.btnColour16.UseVisualStyleBackColor = true;
+            this.btnColour16.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour15
+            // 
+            this.btnColour15.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour15.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour15.Location = new System.Drawing.Point(62, 98);
+            this.btnColour15.Name = "btnColour15";
+            this.btnColour15.Size = new System.Drawing.Size(20, 20);
+            this.btnColour15.TabIndex = 14;
+            this.btnColour15.UseVisualStyleBackColor = true;
+            this.btnColour15.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour14
+            // 
+            this.btnColour14.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour14.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour14.Location = new System.Drawing.Point(36, 98);
+            this.btnColour14.Name = "btnColour14";
+            this.btnColour14.Size = new System.Drawing.Size(20, 20);
+            this.btnColour14.TabIndex = 13;
+            this.btnColour14.UseVisualStyleBackColor = true;
+            this.btnColour14.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour13
+            // 
+            this.btnColour13.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour13.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour13.Location = new System.Drawing.Point(10, 98);
+            this.btnColour13.Name = "btnColour13";
+            this.btnColour13.Size = new System.Drawing.Size(20, 20);
+            this.btnColour13.TabIndex = 12;
+            this.btnColour13.UseVisualStyleBackColor = true;
+            this.btnColour13.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour12
+            // 
+            this.btnColour12.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour12.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour12.Location = new System.Drawing.Point(88, 72);
+            this.btnColour12.Name = "btnColour12";
+            this.btnColour12.Size = new System.Drawing.Size(20, 20);
+            this.btnColour12.TabIndex = 11;
+            this.btnColour12.UseVisualStyleBackColor = true;
+            this.btnColour12.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour11
+            // 
+            this.btnColour11.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour11.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour11.Location = new System.Drawing.Point(62, 72);
+            this.btnColour11.Name = "btnColour11";
+            this.btnColour11.Size = new System.Drawing.Size(20, 20);
+            this.btnColour11.TabIndex = 10;
+            this.btnColour11.UseVisualStyleBackColor = true;
+            this.btnColour11.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour10
+            // 
+            this.btnColour10.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour10.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour10.Location = new System.Drawing.Point(36, 72);
+            this.btnColour10.Name = "btnColour10";
+            this.btnColour10.Size = new System.Drawing.Size(20, 20);
+            this.btnColour10.TabIndex = 9;
+            this.btnColour10.UseVisualStyleBackColor = true;
+            this.btnColour10.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour9
+            // 
+            this.btnColour9.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour9.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour9.Location = new System.Drawing.Point(10, 72);
+            this.btnColour9.Name = "btnColour9";
+            this.btnColour9.Size = new System.Drawing.Size(20, 20);
+            this.btnColour9.TabIndex = 8;
+            this.btnColour9.UseVisualStyleBackColor = true;
+            this.btnColour9.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour8
+            // 
+            this.btnColour8.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour8.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour8.Location = new System.Drawing.Point(88, 46);
+            this.btnColour8.Name = "btnColour8";
+            this.btnColour8.Size = new System.Drawing.Size(20, 20);
+            this.btnColour8.TabIndex = 7;
+            this.btnColour8.UseVisualStyleBackColor = true;
+            this.btnColour8.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour7
+            // 
+            this.btnColour7.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour7.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour7.Location = new System.Drawing.Point(62, 46);
+            this.btnColour7.Name = "btnColour7";
+            this.btnColour7.Size = new System.Drawing.Size(20, 20);
+            this.btnColour7.TabIndex = 6;
+            this.btnColour7.UseVisualStyleBackColor = true;
+            this.btnColour7.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour6
+            // 
+            this.btnColour6.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour6.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour6.Location = new System.Drawing.Point(36, 46);
+            this.btnColour6.Name = "btnColour6";
+            this.btnColour6.Size = new System.Drawing.Size(20, 20);
+            this.btnColour6.TabIndex = 5;
+            this.btnColour6.UseVisualStyleBackColor = true;
+            this.btnColour6.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour5
+            // 
+            this.btnColour5.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour5.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour5.Location = new System.Drawing.Point(10, 46);
+            this.btnColour5.Name = "btnColour5";
+            this.btnColour5.Size = new System.Drawing.Size(20, 20);
+            this.btnColour5.TabIndex = 4;
+            this.btnColour5.UseVisualStyleBackColor = true;
+            this.btnColour5.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour4
+            // 
+            this.btnColour4.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour4.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour4.Location = new System.Drawing.Point(88, 20);
+            this.btnColour4.Name = "btnColour4";
+            this.btnColour4.Size = new System.Drawing.Size(20, 20);
+            this.btnColour4.TabIndex = 3;
+            this.btnColour4.UseVisualStyleBackColor = true;
+            this.btnColour4.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour3
+            // 
+            this.btnColour3.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour3.Location = new System.Drawing.Point(62, 20);
+            this.btnColour3.Name = "btnColour3";
+            this.btnColour3.Size = new System.Drawing.Size(20, 20);
+            this.btnColour3.TabIndex = 2;
+            this.btnColour3.UseVisualStyleBackColor = true;
+            this.btnColour3.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour2
+            // 
+            this.btnColour2.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour2.Location = new System.Drawing.Point(36, 20);
+            this.btnColour2.Name = "btnColour2";
+            this.btnColour2.Size = new System.Drawing.Size(20, 20);
+            this.btnColour2.TabIndex = 1;
+            this.btnColour2.UseVisualStyleBackColor = true;
+            this.btnColour2.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // btnColour1
+            // 
+            this.btnColour1.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnColour1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnColour1.Location = new System.Drawing.Point(10, 20);
+            this.btnColour1.Name = "btnColour1";
+            this.btnColour1.Size = new System.Drawing.Size(20, 20);
+            this.btnColour1.TabIndex = 0;
+            this.btnColour1.UseVisualStyleBackColor = true;
+            this.btnColour1.Click += new System.EventHandler(this.ChangeBrushColour);
+            // 
+            // brushSelection
+            // 
+            this.brushSelection.Controls.Add(this.buttonDrawFlowerBrush);
+            this.brushSelection.Controls.Add(this.buttonErase);
+            this.brushSelection.Controls.Add(this.buttonCircleSprayBrush);
+            this.brushSelection.Controls.Add(this.buttonDrawCircle);
+            this.brushSelection.Controls.Add(this.buttonDrawSquareSpray);
+            this.brushSelection.Controls.Add(this.buttonDrawSnowflake);
+            this.brushSelection.Controls.Add(this.buttonDrawCircumference);
+            this.brushSelection.Controls.Add(this.buttonDrawSquare);
+            this.brushSelection.Controls.Add(this.brushSizeTrackBar);
+            this.brushSelection.Dock = System.Windows.Forms.DockStyle.Top;
+            this.brushSelection.Location = new System.Drawing.Point(0, 0);
+            this.brushSelection.Name = "brushSelection";
+            this.brushSelection.Size = new System.Drawing.Size(121, 270);
+            this.brushSelection.TabIndex = 0;
+            this.brushSelection.TabStop = false;
+            this.brushSelection.Text = "Brush";
+            // 
+            // buttonDrawFlowerBrush
+            // 
+            this.buttonDrawFlowerBrush.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonDrawFlowerBrush.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.buttonDrawFlowerBrush.Image = global::Lab3_Paint.Properties.Resources.Flower;
+            this.buttonDrawFlowerBrush.Location = new System.Drawing.Point(21, 171);
+            this.buttonDrawFlowerBrush.Name = "buttonDrawFlowerBrush";
+            this.buttonDrawFlowerBrush.Size = new System.Drawing.Size(35, 35);
+            this.buttonDrawFlowerBrush.TabIndex = 8;
+            this.buttonDrawFlowerBrush.UseVisualStyleBackColor = true;
+            this.buttonDrawFlowerBrush.Click += new System.EventHandler(this.buttonDrawFlowerBrush_Click);
+            // 
+            // buttonErase
+            // 
+            this.buttonErase.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonErase.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.buttonErase.Image = global::Lab3_Paint.Properties.Resources.Eraser;
+            this.buttonErase.Location = new System.Drawing.Point(21, 225);
+            this.buttonErase.Name = "buttonErase";
+            this.buttonErase.Size = new System.Drawing.Size(35, 35);
+            this.buttonErase.TabIndex = 7;
+            this.buttonErase.UseVisualStyleBackColor = true;
+            this.buttonErase.Click += new System.EventHandler(this.buttonErase_Click);
+            // 
+            // buttonCircleSprayBrush
+            // 
+            this.buttonCircleSprayBrush.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonCircleSprayBrush.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.buttonCircleSprayBrush.Image = global::Lab3_Paint.Properties.Resources.Round_spray;
+            this.buttonCircleSprayBrush.Location = new System.Drawing.Point(62, 130);
+            this.buttonCircleSprayBrush.Name = "buttonCircleSprayBrush";
+            this.buttonCircleSprayBrush.Size = new System.Drawing.Size(35, 35);
+            this.buttonCircleSprayBrush.TabIndex = 6;
+            this.buttonCircleSprayBrush.UseVisualStyleBackColor = true;
+            this.buttonCircleSprayBrush.Click += new System.EventHandler(this.buttonCircleSprayBrush_Click);
+            // 
+            // buttonDrawCircle
+            // 
+            this.buttonDrawCircle.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonDrawCircle.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.buttonDrawCircle.Image = global::Lab3_Paint.Properties.Resources.Circle;
+            this.buttonDrawCircle.Location = new System.Drawing.Point(62, 48);
+            this.buttonDrawCircle.Name = "buttonDrawCircle";
+            this.buttonDrawCircle.Size = new System.Drawing.Size(35, 35);
+            this.buttonDrawCircle.TabIndex = 5;
+            this.buttonDrawCircle.UseVisualStyleBackColor = true;
+            this.buttonDrawCircle.Click += new System.EventHandler(this.buttonDrawCircle_Click);
+            // 
+            // buttonDrawSquareSpray
+            // 
+            this.buttonDrawSquareSpray.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonDrawSquareSpray.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.buttonDrawSquareSpray.Image = global::Lab3_Paint.Properties.Resources.Simple_spray;
+            this.buttonDrawSquareSpray.Location = new System.Drawing.Point(21, 130);
+            this.buttonDrawSquareSpray.Name = "buttonDrawSquareSpray";
+            this.buttonDrawSquareSpray.Size = new System.Drawing.Size(35, 35);
+            this.buttonDrawSquareSpray.TabIndex = 4;
+            this.buttonDrawSquareSpray.UseVisualStyleBackColor = true;
+            this.buttonDrawSquareSpray.Click += new System.EventHandler(this.buttonDrawSquareSpray_Click);
+            // 
+            // buttonDrawSnowflake
+            // 
+            this.buttonDrawSnowflake.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonDrawSnowflake.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.buttonDrawSnowflake.Image = global::Lab3_Paint.Properties.Resources.Snowflake;
+            this.buttonDrawSnowflake.Location = new System.Drawing.Point(62, 89);
+            this.buttonDrawSnowflake.Name = "buttonDrawSnowflake";
+            this.buttonDrawSnowflake.Size = new System.Drawing.Size(35, 35);
+            this.buttonDrawSnowflake.TabIndex = 3;
+            this.buttonDrawSnowflake.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
+            this.buttonDrawSnowflake.UseVisualStyleBackColor = true;
+            this.buttonDrawSnowflake.Click += new System.EventHandler(this.buttonDrawSnowflake_Click);
+            // 
+            // buttonDrawCircumference
+            // 
+            this.buttonDrawCircumference.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonDrawCircumference.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.buttonDrawCircumference.Image = global::Lab3_Paint.Properties.Resources.Circumference;
+            this.buttonDrawCircumference.Location = new System.Drawing.Point(21, 89);
+            this.buttonDrawCircumference.Name = "buttonDrawCircumference";
+            this.buttonDrawCircumference.Size = new System.Drawing.Size(35, 35);
+            this.buttonDrawCircumference.TabIndex = 2;
+            this.buttonDrawCircumference.UseVisualStyleBackColor = true;
+            this.buttonDrawCircumference.Click += new System.EventHandler(this.buttonDrawCircumference_Click);
+            // 
+            // buttonDrawSquare
+            // 
+            this.buttonDrawSquare.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonDrawSquare.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.buttonDrawSquare.Image = ((System.Drawing.Image)(resources.GetObject("buttonDrawSquare.Image")));
+            this.buttonDrawSquare.Location = new System.Drawing.Point(21, 48);
+            this.buttonDrawSquare.Name = "buttonDrawSquare";
+            this.buttonDrawSquare.Size = new System.Drawing.Size(35, 35);
+            this.buttonDrawSquare.TabIndex = 1;
+            this.buttonDrawSquare.UseVisualStyleBackColor = true;
+            this.buttonDrawSquare.Click += new System.EventHandler(this.buttonDrawSquare_Click);
+            // 
+            // brushSizeTrackBar
+            // 
+            this.brushSizeTrackBar.AutoSize = false;
+            this.brushSizeTrackBar.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.brushSizeTrackBar.Dock = System.Windows.Forms.DockStyle.Top;
+            this.brushSizeTrackBar.LargeChange = 20;
+            this.brushSizeTrackBar.Location = new System.Drawing.Point(3, 16);
+            this.brushSizeTrackBar.Maximum = 80;
+            this.brushSizeTrackBar.Minimum = 1;
+            this.brushSizeTrackBar.Name = "brushSizeTrackBar";
+            this.brushSizeTrackBar.Size = new System.Drawing.Size(115, 26);
+            this.brushSizeTrackBar.SmallChange = 4;
+            this.brushSizeTrackBar.TabIndex = 0;
+            this.brushSizeTrackBar.TickStyle = System.Windows.Forms.TickStyle.None;
+            this.brushSizeTrackBar.Value = 5;
+            this.brushSizeTrackBar.Scroll += new System.EventHandler(this.brushSizeTrackBar_Scroll);
+            // 
+            // drawPanel
+            // 
+            this.drawPanel.AutoScroll = true;
+            this.drawPanel.Controls.Add(this.pictureBox1);
+            this.drawPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.drawPanel.Location = new System.Drawing.Point(0, 24);
+            this.drawPanel.Name = "drawPanel";
+            this.drawPanel.Size = new System.Drawing.Size(550, 457);
+            this.drawPanel.TabIndex = 2;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.BackColor = System.Drawing.Color.Silver;
+            this.pictureBox1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.pictureBox1.Cursor = System.Windows.Forms.Cursors.Cross;
+            this.pictureBox1.Location = new System.Drawing.Point(0, 1);
+            this.pictureBox1.Margin = new System.Windows.Forms.Padding(0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(550, 455);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.pictureBox1.TabIndex = 0;
+            this.pictureBox1.TabStop = false;
+            this.pictureBox1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseDown);
+            this.pictureBox1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseMove);
+            this.pictureBox1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseUp);
+            // 
+            // colorDialog1
+            // 
+            this.colorDialog1.FullOpen = true;
+            this.colorDialog1.ShowHelp = true;
+            this.colorDialog1.SolidColorOnly = true;
+            // 
+            // saveFileToolStripMenuItem
+            // 
+            this.saveFileToolStripMenuItem.Name = "saveFileToolStripMenuItem";
+            this.saveFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.saveFileToolStripMenuItem.Text = "Save as...";
+            this.saveFileToolStripMenuItem.Click += new System.EventHandler(this.saveFileToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
+            // 
+            // openFileToolStripMenuItem
+            // 
+            this.openFileToolStripMenuItem.Name = "openFileToolStripMenuItem";
+            this.openFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.openFileToolStripMenuItem.Text = "Open...";
+            this.openFileToolStripMenuItem.Click += new System.EventHandler(this.openFileToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem2
+            // 
+            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(177, 6);
+            // 
+            // Paint
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoSize = true;
+            this.ClientSize = new System.Drawing.Size(671, 481);
+            this.Controls.Add(this.drawPanel);
+            this.Controls.Add(this.toolsPanel);
+            this.Controls.Add(this.menuStrip1);
+            this.MainMenuStrip = this.menuStrip1;
+            this.Name = "Paint";
+            this.Text = "Paint";
+            this.menuStrip1.ResumeLayout(false);
+            this.menuStrip1.PerformLayout();
+            this.toolsPanel.ResumeLayout(false);
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
+            this.brushSelection.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.brushSizeTrackBar)).EndInit();
+            this.drawPanel.ResumeLayout(false);
+            this.drawPanel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
+        }
+
+        #endregion
+
+        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        private System.Windows.Forms.Panel toolsPanel;
+        private System.Windows.Forms.GroupBox brushSelection;
+        private System.Windows.Forms.Panel drawPanel;
+        private System.Windows.Forms.TrackBar brushSizeTrackBar;
+        private System.Windows.Forms.Button buttonDrawSnowflake;
+        private System.Windows.Forms.Button buttonDrawCircumference;
+        private System.Windows.Forms.Button buttonDrawSquare;
+        private System.Windows.Forms.Button buttonDrawSquareSpray;
+        private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
+        private System.Windows.Forms.Button buttonDrawCircle;
+        private System.Windows.Forms.Button buttonCircleSprayBrush;
+        private System.Windows.Forms.Button buttonErase;
+        private System.Windows.Forms.Button buttonDrawFlowerBrush;
+        private System.Windows.Forms.Button btnPickColour;
+        private System.Windows.Forms.ColorDialog colorDialog1;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.Button btnColour1;
+        private System.Windows.Forms.Button btnColour8;
+        private System.Windows.Forms.Button btnColour7;
+        private System.Windows.Forms.Button btnColour6;
+        private System.Windows.Forms.Button btnColour5;
+        private System.Windows.Forms.Button btnColour4;
+        private System.Windows.Forms.Button btnColour3;
+        private System.Windows.Forms.Button btnColour2;
+        private System.Windows.Forms.Button btnColour12;
+        private System.Windows.Forms.Button btnColour11;
+        private System.Windows.Forms.Button btnColour10;
+        private System.Windows.Forms.Button btnColour9;
+        private System.Windows.Forms.Button btnColour16;
+        private System.Windows.Forms.Button btnColour15;
+        private System.Windows.Forms.Button btnColour14;
+        private System.Windows.Forms.Button btnColour13;
+        private System.Windows.Forms.ToolStripMenuItem newBlankToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem saveFileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem openFileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
+    }
+}
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Lab3_Paint
+{
+    internal static class Program
+    {
+        [STAThread]
+        static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Paint());
+        }
+    }
+}
+
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+// Общие сведения об этой сборке предоставляются следующим набором
+// набора атрибутов. Измените значения этих атрибутов для изменения сведений,
+// связанных со сборкой.
+[assembly: AssemblyTitle("Lab3_Paint")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Lab3_Paint")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// Установка значения False для параметра ComVisible делает типы в этой сборке невидимыми
+// для компонентов COM. Если необходимо обратиться к типу в этой сборке через
+// COM, следует установить атрибут ComVisible в TRUE для этого типа.
+[assembly: ComVisible(false)]
+
+// Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
+[assembly: Guid("e8346952-69ca-416d-8073-024e7fbe9e3a")]
+
+// Сведения о версии сборки состоят из указанных ниже четырех значений:
+//
+//      Основной номер версии
+//      Дополнительный номер версии
+//      Номер сборки
+//      Редакция
+//
+// Можно задать все значения или принять номера сборки и редакции по умолчанию 
+// используя "*", как показано ниже:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     Этот код создан программой.
+//     Исполняемая версия:4.0.30319.42000
+//
+//     Изменения в этом файле могут привести к неправильной работе и будут потеряны в случае
+//     повторной генерации кода.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+namespace Lab3_Paint.Properties {
+    using System;
+    
+    
+    /// <summary>
+    ///   Класс ресурса со строгой типизацией для поиска локализованных строк и т.д.
+    /// </summary>
+    // Этот класс создан автоматически классом StronglyTypedResourceBuilder
+    // с помощью такого средства, как ResGen или Visual Studio.
+    // Чтобы добавить или удалить член, измените файл .ResX и снова запустите ResGen
+    // с параметром /str или перестройте свой проект VS.
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    internal class Resources {
+        
+        private static global::System.Resources.ResourceManager resourceMan;
+        
+        private static global::System.Globalization.CultureInfo resourceCulture;
+        
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal Resources() {
+        }
+        
+        /// <summary>
+        ///   Возвращает кэшированный экземпляр ResourceManager, использованный этим классом.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Resources.ResourceManager ResourceManager {
+            get {
+                if (object.ReferenceEquals(resourceMan, null)) {
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Lab3_Paint.Properties.Resources", typeof(Resources).Assembly);
+                    resourceMan = temp;
+                }
+                return resourceMan;
+            }
+        }
+        
+        /// <summary>
+        ///   Перезаписывает свойство CurrentUICulture текущего потока для всех
+        ///   обращений к ресурсу с помощью этого класса ресурса со строгой типизацией.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Globalization.CultureInfo Culture {
+            get {
+                return resourceCulture;
+            }
+            set {
+                resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Circle {
+            get {
+                object obj = ResourceManager.GetObject("Circle", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Circumference {
+            get {
+                object obj = ResourceManager.GetObject("Circumference", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Eraser {
+            get {
+                object obj = ResourceManager.GetObject("Eraser", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Flower {
+            get {
+                object obj = ResourceManager.GetObject("Flower", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Round_spray {
+            get {
+                object obj = ResourceManager.GetObject("Round_spray", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Simple_spray {
+            get {
+                object obj = ResourceManager.GetObject("Simple_spray", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Snowflake {
+            get {
+                object obj = ResourceManager.GetObject("Snowflake", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Square {
+            get {
+                object obj = ResourceManager.GetObject("Square", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//     Runtime Version:4.0.30319.42000
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+namespace Lab3_Paint.Properties
+{
+
+
+    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "11.0.0.0")]
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase
+    {
+
+        private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
+
+        public static Settings Default
+        {
+            get
+            {
+                return defaultInstance;
+            }
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Lab3_Task1
+{
+    internal static class Program
+    {
+        /// <summary>
+        /// Главная точка входа для приложения.
+        /// </summary>
+        [STAThread]
+        static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Task1());
+        }
+    }
+}
+
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+// Общие сведения об этой сборке предоставляются следующим набором
+// набора атрибутов. Измените значения этих атрибутов для изменения сведений,
+// связанных со сборкой.
+[assembly: AssemblyTitle("Lab3_Task1")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Lab3_Task1")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// Установка значения False для параметра ComVisible делает типы в этой сборке невидимыми
+// для компонентов COM. Если необходимо обратиться к типу в этой сборке через
+// COM, следует установить атрибут ComVisible в TRUE для этого типа.
+[assembly: ComVisible(false)]
+
+// Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
+[assembly: Guid("8c4b0929-f5b8-421d-bb53-25e65e239d53")]
+
+// Сведения о версии сборки состоят из указанных ниже четырех значений:
+//
+//      Основной номер версии
+//      Дополнительный номер версии
+//      Номер сборки
+//      Редакция
+//
+// Можно задать все значения или принять номера сборки и редакции по умолчанию 
+// используя "*", как показано ниже:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     Этот код создан программным средством.
+//     Версия среды выполнения: 4.0.30319.42000
+//
+//     Изменения в этом файле могут привести к неправильному поведению и будут утрачены, если
+//     код создан повторно.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+namespace Lab3_Task1.Properties
+{
+
+
+    /// <summary>
+    ///   Класс ресурсов со строгим типом для поиска локализованных строк и пр.
+    /// </summary>
+    // Этот класс был автоматически создан при помощи StronglyTypedResourceBuilder
+    // класс с помощью таких средств, как ResGen или Visual Studio.
+    // Для добавления или удаления члена измените файл .ResX, а затем перезапустите ResGen
+    // с параметром /str или заново постройте свой VS-проект.
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    internal class Resources
+    {
+
+        private static global::System.Resources.ResourceManager resourceMan;
+
+        private static global::System.Globalization.CultureInfo resourceCulture;
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal Resources()
+        {
+        }
+
+        /// <summary>
+        ///   Возврат кэшированного экземпляра ResourceManager, используемого этим классом.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Resources.ResourceManager ResourceManager
+        {
+            get
+            {
+                if ((resourceMan == null))
+                {
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Lab3_Task1.Properties.Resources", typeof(Resources).Assembly);
+                    resourceMan = temp;
+                }
+                return resourceMan;
+            }
+        }
+
+        /// <summary>
+        ///   Переопределяет свойство CurrentUICulture текущего потока для всех
+        ///   подстановки ресурсов с помощью этого класса ресурсов со строгим типом.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Globalization.CultureInfo Culture
+        {
+            get
+            {
+                return resourceCulture;
+            }
+            set
+            {
+                resourceCulture = value;
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//     Runtime Version:4.0.30319.42000
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+namespace Lab3_Task1.Properties
+{
+
+
+    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "11.0.0.0")]
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase
+    {
+
+        private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
+
+        public static Settings Default
+        {
+            get
+            {
+                return defaultInstance;
+            }
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Lab3_Task1
+{
+    public partial class Task1 : Form
+    {
+        public Task1()
+        {
+            InitializeComponent();
+            this.Text = "Task1";
+        }
+
+        private void btnHello_Click(object sender, EventArgs e)
+        {
+            string userName = txtEnteredName.Text.Trim();
+            if (userName.Length < 3)
+                MessageBox.Show("Please, enter username.");
+            else
+                MessageBox.Show("Hello, " + userName + "!");
+        }
+
+        private void btnQuit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+    }
+}
+
+namespace Lab3_Task1
+{
+    partial class Task1
+    {
+        /// <summary>
+        /// Обязательная переменная конструктора.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Освободить все используемые ресурсы.
+        /// </summary>
+        /// <param name="disposing">истинно, если управляемый ресурс должен быть удален; иначе ложно.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Код, автоматически созданный конструктором форм Windows
+
+        /// <summary>
+        /// Требуемый метод для поддержки конструктора — не изменяйте 
+        /// содержимое этого метода с помощью редактора кода.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.btnHello = new System.Windows.Forms.Button();
+            this.btnQuit = new System.Windows.Forms.Button();
+            this.lblHint = new System.Windows.Forms.Label();
+            this.txtEnteredName = new System.Windows.Forms.TextBox();
+            this.SuspendLayout();
+            // 
+            // btnHello
+            // 
+            this.btnHello.Location = new System.Drawing.Point(24, 54);
+            this.btnHello.Name = "btnHello";
+            this.btnHello.Size = new System.Drawing.Size(75, 23);
+            this.btnHello.TabIndex = 0;
+            this.btnHello.Text = "Hello!";
+            this.btnHello.UseVisualStyleBackColor = true;
+            this.btnHello.Click += new System.EventHandler(this.btnHello_Click);
+            // 
+            // btnQuit
+            // 
+            this.btnQuit.Location = new System.Drawing.Point(116, 54);
+            this.btnQuit.Name = "btnQuit";
+            this.btnQuit.Size = new System.Drawing.Size(75, 23);
+            this.btnQuit.TabIndex = 1;
+            this.btnQuit.Text = "Quit";
+            this.btnQuit.UseVisualStyleBackColor = true;
+            this.btnQuit.Click += new System.EventHandler(this.btnQuit_Click);
+            // 
+            // lblHint
+            // 
+            this.lblHint.AutoSize = true;
+            this.lblHint.Location = new System.Drawing.Point(12, 15);
+            this.lblHint.Name = "lblHint";
+            this.lblHint.Size = new System.Drawing.Size(87, 13);
+            this.lblHint.TabIndex = 2;
+            this.lblHint.Text = "Enter your name:";
+            // 
+            // txtEnteredName
+            // 
+            this.txtEnteredName.Location = new System.Drawing.Point(105, 12);
+            this.txtEnteredName.Name = "txtEnteredName";
+            this.txtEnteredName.Size = new System.Drawing.Size(100, 20);
+            this.txtEnteredName.TabIndex = 3;
+            // 
+            // Task1
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
+            this.ClientSize = new System.Drawing.Size(221, 94);
+            this.Controls.Add(this.txtEnteredName);
+            this.Controls.Add(this.lblHint);
+            this.Controls.Add(this.btnQuit);
+            this.Controls.Add(this.btnHello);
+            this.Name = "Task1";
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
+        }
+
+        #endregion
+
+        private System.Windows.Forms.Button btnHello;
+        private System.Windows.Forms.Button btnQuit;
+        private System.Windows.Forms.Label lblHint;
+        private System.Windows.Forms.TextBox txtEnteredName;
+    }
+}
+
+

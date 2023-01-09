@@ -1,0 +1,456 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab2
+{
+    class Paper
+    {
+        public string Name { get; set; }
+
+        public Person Author { get; set; }
+
+        // Testing field.
+        public int Count { get; set; }
+
+        public DateTime PublicationDate { get; set; }
+
+        public Paper(string name, Person author, DateTime publicationDate)
+        {
+            Name = name;
+            Author = author;
+            PublicationDate = publicationDate;
+        }
+
+        public Paper()
+        {
+            Name = "No publication name";
+            Author = new Person();
+            PublicationDate = DateTime.Now;
+        }
+
+        public string ToFullString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("Publication name:\t");
+            sb.Append(Name);
+            sb.Append("\nAuthor:\t\t\t");
+            sb.Append(Author.ToFullString());
+            sb.Append("\nPublication date:\t");
+            sb.Append(PublicationDate.ToString());
+            return sb.ToString();
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab2
+{
+    class Person
+    {
+        private string _name { get; set; }
+
+        private string _secondName { get; set; }
+
+        private DateTime _birthDate { get; set; }
+
+        public Person(string name, string secondName, DateTime birthDate)
+        {
+            _name = name;
+            _secondName = secondName;
+            _birthDate = birthDate;
+        }
+
+        public Person()
+        {
+            _name = "No name";
+            _secondName = "No second name";
+            _birthDate = DateTime.MinValue;
+        }
+
+        public string Name { get { return _name; } set { _name = value; } }
+
+        public string SecondName { get { return _secondName; } set { _secondName = value; } }
+
+        public DateTime BirthDate { get { return _birthDate; } set { _birthDate = value; } }
+
+        public int BirthYear
+        {
+            get
+            {
+                return _birthDate.Year;
+            }
+            set
+            {
+                _birthDate = new DateTime(value, _birthDate.Month, _birthDate.Day);
+            }
+        }
+
+        // Without a String Builder o.o
+        public string ToFullString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("First name: ");
+            sb.Append(_name);
+            sb.Append(" Second name: ");
+            sb.Append(_secondName);
+            sb.Append(" Birth date: ");
+            sb.Append(_birthDate.ToString());
+            return sb.ToString();
+        }
+
+        public string ToShortString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("First name: ");
+            sb.Append(_name);
+            sb.Append(" Second name: ");
+            sb.Append(_secondName);
+            return sb.ToString();
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab2
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            ResearchTeam team = new ResearchTeam();
+            Console.WriteLine(team.ToShortString() + "\n");
+
+            ResearchTeam team2 = new ResearchTeam(
+                "Australische seltene Krabben", "Weltschutzorganisation", 1, TimeFrame.TwoYears);
+            Console.WriteLine(team2.ToString() + "\n");
+
+            // The current latest date is 'DateTime.Now';
+            // therefore, should output Raue Felsenkrabbe paper.
+            Paper[] papers = { new Paper("Lila gesprenkelte Strandkrabbe", new Person(), 
+                                         new DateTime(2007, DateTimeKind.Local)),
+                               new Paper("Raue Felsenkrabbe", new Person(), DateTime.Now),
+                               new Paper("Sandkrabbe", new Person(), new DateTime(2015, 4, 20, 11, 30, 43)),
+                               new Paper("Kleine Strandkrabbe", new Person(), new DateTime(2010, 11, 27)) };
+            team2.AddPapers(papers);
+            Console.WriteLine("\tThe latest publication:");
+            Console.WriteLine(team2.LastPublication.ToFullString());
+            Console.Write("\n\n");
+
+
+
+            // =ADDITIONAL TASK=
+            // Create 3 different arrays.
+            // The type of the arrays depends on the type of work.
+            while (true)
+            {
+                // Greetings.
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine();
+                Console.WriteLine("Please, enter Row and Column number.");
+                Console.WriteLine("Use ',' or ';' as a separetor.");
+                Console.WriteLine("For example: '500; 2000' (without the apostrophes)");
+                Console.ResetColor();
+
+                // Receive and process data.
+                Console.Write("Enter: ");
+                string[] info = Console.ReadLine().Split(',', ';');
+
+                int nrow = 0;
+                int ncolumn = 0;
+                bool ok = true;
+
+                if (info.Length == 2)
+                {
+                    if (ok)
+                        ok = Int32.TryParse(info[0], out nrow);
+                    if (ok)
+                        ok = Int32.TryParse(info[1], out ncolumn);
+                }
+                else ok = false;
+
+                if (ok)
+                {
+                    try
+                    {
+                        // If entered data is OK,
+                        // declare the arrays with the same element count,
+                        // initialize them and assign new objects.
+                        Console.WriteLine("[System]: Declaring arrays...");
+                        
+                        Paper[] simpleArray = new Paper[nrow * ncolumn];
+                        Paper[,] twoDimensionalArray = new Paper[nrow, ncolumn];
+                        Paper[][] jaggedArray = new Paper[nrow][];
+                        for (int i = 0; i < nrow; i++)
+                            jaggedArray[i] = new Paper[ncolumn];
+
+                        // Initialize the arrays.
+                        Console.WriteLine("[System]: Initializing arrays...");
+                        for (int i = 0; i < simpleArray.Length; i++)
+                            simpleArray[i] = new Paper();
+
+                        for (int i = 0; i < nrow; i++)
+                            for (int j = 0; j < ncolumn; j++)
+                                twoDimensionalArray[i, j] = new Paper();
+
+                        for (int i = 0; i < jaggedArray.Length; i++)
+                            for (int j = 0; j < jaggedArray[i].Length; j++)
+                                jaggedArray[i][j] = new Paper();
+
+                        // Comparing time execution of assigning Person to an item of an array:
+                        Console.WriteLine("\tFirst execution:");
+                        CompareTime(simpleArray, twoDimensionalArray, jaggedArray);
+                        Console.WriteLine("\tSecond execution:");
+                        CompareTime(simpleArray, twoDimensionalArray, jaggedArray);
+                    }
+                    catch (Exception)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("[Error]: Entered Row and Column numbers are too large; try smaller numbers.");
+                        Console.ResetColor();
+                    }
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\nIncorrect input.\nTry to type something similar: '400, 1000'");
+                    Console.ResetColor();
+                } 
+            }
+
+            //Console.ReadLine();
+        }
+
+        static void CompareTime(Paper[] oneDimArr, Paper[,] twoDimArr, Paper[][] jaggedArr)
+        {
+            Console.WriteLine("[System]: Changing data in arrays...");
+            long duration;
+            Stopwatch sw = new Stopwatch();
+
+            sw.Start();
+            for (int i = 0; i < oneDimArr.Length; i++)
+                oneDimArr[i].Count++;
+            duration = sw.ElapsedMilliseconds;
+            Console.WriteLine($"[1-Dimensional Array]:\tThe process took {duration} milliseconds.");
+
+            sw.Restart();
+            for (int i = 0; i < twoDimArr.GetLength(0); i++)
+                for (int j = 0; j < twoDimArr.GetLength(1); j++)
+                    twoDimArr[i, j].Count++;
+            duration = sw.ElapsedMilliseconds;
+            Console.WriteLine($"[2-Dimensional Array]:\tThe process took {duration} milliseconds.");
+
+            sw.Restart();
+            for (int i = 0; i < jaggedArr.Length; i++)
+                for (int j = 0; j < jaggedArr[i].Length; j++)
+                    jaggedArr[i][j].Count++;
+            duration = sw.ElapsedMilliseconds;
+            Console.WriteLine($"[Jagged Array]:\t\tThe process took {duration} milliseconds.");
+        }
+    }
+}
+
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+// Общие сведения об этой сборке предоставляются следующим набором
+// набора атрибутов. Измените значения этих атрибутов для изменения сведений,
+// связанные с этой сборкой.
+[assembly: AssemblyTitle("Lab2")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Lab2")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// Установка значения False для параметра ComVisible делает типы в этой сборке невидимыми
+// для компонентов COM. Если необходимо обратиться к типу в этой сборке через
+// из модели COM задайте для атрибута ComVisible этого типа значение true.
+[assembly: ComVisible(false)]
+
+// Следующий GUID представляет идентификатор typelib, если этот проект доступен из модели COM
+[assembly: Guid("556abcb7-c042-4b15-ab62-193c6d258f59")]
+
+// Сведения о версии сборки состоят из указанных ниже четырех значений:
+//
+//      Основной номер версии
+//      Дополнительный номер версии
+//      Номер сборки
+//      Номер редакции
+//
+// Можно задать все значения или принять номера сборки и редакции по умолчанию 
+// используя "*", как показано ниже:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab2
+{
+    class ResearchTeam
+    {
+        private string _researchTopic { get; set; }
+
+        private string _organizationName { get; set; }
+
+        private int _registrationNumber { get; set; }
+
+        /// <summary>
+        /// Research duration.
+        /// </summary>
+        private TimeFrame _timeFrame { get; set; }
+
+        private Paper[] _publications { get; set; }
+
+        public ResearchTeam(string topicName, string orgName, int regNum, TimeFrame timeFrame)
+        {
+            _researchTopic = topicName;
+            _organizationName = orgName;
+            _registrationNumber = regNum;
+            _timeFrame = timeFrame;
+            // Nothing is said about the initialization of the papers.
+            _publications = new Paper[0];
+        }
+
+        public ResearchTeam()
+        {
+            _researchTopic = "No research topic name";
+            _organizationName = "No organization name";
+            _registrationNumber = -1;
+            _timeFrame = TimeFrame.Long;
+            // Nothing is said about the initialization of the papers.
+            _publications = new Paper[0];
+        }
+
+        public string ResearchTopic { get { return _researchTopic; } set { _researchTopic = value; } }
+
+        public string OrganizationName { get { return _organizationName; } set { _organizationName = value; } }
+
+        public int RegistrationNumber { get { return _registrationNumber; } set { _registrationNumber = value; } }
+
+        public TimeFrame TimeFrame { get { return _timeFrame; } set { _timeFrame = value; } }
+
+        public Paper[] Publications { get { return _publications; } set { _publications = value; } }
+
+        public Paper LastPublication
+        {
+            get
+            {
+                if (_publications.Count() == 0)
+                    return null;
+                else return GetLatestPaper();
+            }
+        }
+
+        private Paper GetLatestPaper()
+        {
+            Paper result = _publications[0];
+            // Not sorted array O(n)
+            for (int i = 0; i < _publications.Count(p => p != null); i++)
+            {
+                if (result.PublicationDate < _publications[i].PublicationDate)
+                    result = _publications[i];
+            }
+            return result;
+        }
+
+        public void AddPapers(params Paper[] papers)
+        {
+            Paper[] result = null;
+
+            if (_publications == null)
+                _publications = new Paper[papers.Length];
+            else
+                result = new Paper[papers.Length + _publications.Length];
+
+            // Concatenation.
+            int index = 0;
+
+            for (int i = 0; i < _publications.Length; i++)
+                result[index++] = _publications[i];
+
+            for (int j = 0; j < papers.Length; j++)
+                result[index++] = papers[j];
+
+            _publications = result;
+        }
+
+        private string GetFormattedPapers()
+        {
+            string result = "";
+            for (int i = 0; i < _publications.Length; i++)
+            {
+                result += _publications[i].ToFullString() + "\n";
+            }
+            return result;
+        }
+
+        public string ToFullString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("\tResearch topic name:\t");
+            sb.Append(_researchTopic);
+            sb.Append("\n\tOrganization name:\t");
+            sb.Append(_organizationName);
+            sb.Append("\n\tRegistration number:\t");
+            sb.Append(_registrationNumber);
+            sb.Append("\n\tTime frame:\t\t");
+            sb.Append(_timeFrame);
+            sb.Append("\n\tPubclications:\n");
+            sb.Append(GetFormattedPapers());
+            return sb.ToString();
+        }
+
+        public string ToShortString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("\tResearch topic name:\t");
+            sb.Append(_researchTopic);
+            sb.Append("\n\tOrganization name:\t");
+            sb.Append(_organizationName);
+            sb.Append("\n\tRegistration number:\t");
+            sb.Append(_registrationNumber);
+            sb.Append("\n\tTime frame:\t\t");
+            sb.Append(_timeFrame);
+            return sb.ToString();
+        }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab2
+{
+    enum TimeFrame
+    {
+        Year = 1,
+        TwoYears = 2,
+        Long = 3
+    }
+}
+
