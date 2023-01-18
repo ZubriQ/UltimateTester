@@ -19,11 +19,31 @@ namespace PlagiarismApp.Controllers
 
         #region Projects
         [HttpGet]
-        public async Task<ActionResult<List<Project>>> GetProjects()
+        public async Task<ActionResult<IEnumerable<object>>> GetProjects()
         {
-            return await _database.Projects.Include(p => p.ProjectType)
-                                           .Include(p => p.Student)
-                                           .ToListAsync();
+            return await _database
+                .Projects
+                .AsNoTracking()
+                .Include(p => p.ProjectType)
+                .Include(p => p.Student)
+                .Select(project => new
+                {
+                    project.Name,
+                    project.Id,
+                    project.OriginalityPercentage,
+                    project.DateOfPassing,
+                    ProjectType = new
+                    {
+                        project.ProjectType.Name,
+                        project.ProjectType.Description
+                    },
+                    Student = new
+                    {
+                        project.Student.FirstName,
+                        project.Student.Surname,
+                        project.Student.Patronymic,
+                    }
+                }).ToArrayAsync();
         }
 
         [HttpGet("{id:int}")]

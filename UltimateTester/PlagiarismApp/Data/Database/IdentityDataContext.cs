@@ -7,6 +7,7 @@ namespace PlagiarismApp.Data.Database
     {
         public IdentityDataContext(DbContextOptions options) : base(options)
         {
+            Database.EnsureCreated();
         }
 
         public IdentityDataContext() : base()
